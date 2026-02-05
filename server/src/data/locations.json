@@ -1,0 +1,113 @@
+{
+  "provinces": [
+    {
+      "Code": "01",
+      "Name": "Thành phố Hà Nội",
+      "FullName": "Thành phố Hà Nội",
+      "Type": "provincial",
+      "Districts": [
+        {
+          "Code": "001",
+          "Name": "Quận Ba Đình",
+          "Type": "urban_district",
+          "Wards": [
+            {
+              "Code": "00001",
+              "Name": "Phường Phúc Xá",
+              "Type": "ward"
+            },
+            {
+              "Code": "00004",
+              "Name": "Phường Trúc Bạch",
+              "Type": "ward"
+            },
+            {
+              "Code": "00006",
+              "Name": "Phường Vĩnh Phúc",
+              "Type": "ward"
+            }
+          ]
+        },
+        {
+          "Code": "002",
+          "Name": "Quận Hoàn Kiếm",
+          "Type": "urban_district",
+          "Wards": [
+            {
+              "Code": "00007",
+              "Name": "Phường Cửa Đông",
+              "Type": "ward"
+            },
+            {
+              "Code": "00010",
+              "Name": "Phường Lý Thái Tổ",
+              "Type": "ward"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Code": "79",
+      "Name": "Thành phố Hồ Chí Minh",
+      "FullName": "Thành phố Hồ Chí Minh",
+      "Type": "provincial",
+      "Districts": [
+        {
+          "Code": "760",
+          "Name": "Quận 1",
+          "Type": "urban_district",
+          "Wards": [
+            {
+              "Code": "26727",
+              "Name": "Phường Bến Nghé",
+              "Type": "ward"
+            },
+            {
+              "Code": "26730",
+              "Name": "Phường Bến Thành",
+              "Type": "ward"
+            }
+          ]
+        },
+        {
+          "Code": "761",
+          "Name": "Quận 3",
+          "Type": "urban_district",
+          "Wards": [
+            {
+              "Code": "26793",
+              "Name": "Phường 1",
+              "Type": "ward"
+            },
+            {
+              "Code": "26796",
+              "Name": "Phường 2",
+              "Type": "ward"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Code": "31",
+      "Name": "Thành phố Đà Nẵng",
+      "FullName": "Thành phố Đà Nẵng",
+      "Type": "provincial",
+      "Districts": [
+        {
+          "Code": "320",
+          "Name": "Quận Hải Châu",
+          "Type": "urban_district",
+          "Wards": [
+            {
+              "Code": "17367",
+              "Name": "Phường Thanh Khê Tây",
+              "Type": "ward"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

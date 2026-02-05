@@ -1,0 +1,12 @@
+flask
+flask-cors
+pymongo
+openai
+google-generativeai
+python-dotenv
+numpy
+pandas
+tiktoken
+chromadb
+pymongo[encryption]
+motor

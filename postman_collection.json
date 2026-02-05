@@ -1,0 +1,1192 @@
+{
+  "info": {
+    "_postman_id": "d8e9f5a4-1b2c-4e6f-8a9b-cd1e2f3a4b5c",
+    "name": "DATN",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "API collection for PhongTro123 - a room rental marketplace application"
+  },
+  "item": [
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"0123456789\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "register"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "login"]
+            },
+            "description": "Login with email and password"
+          },
+          "response": []
+        },
+        {
+          "name": "Google Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_token\": \"google_id_token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/login-google",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "login-google"]
+            },
+            "description": "Login using Google authentication"
+          },
+          "response": []
+        },
+        {
+          "name": "Authenticate User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth"]
+            },
+            "description": "Get authenticated user details"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "logout"]
+            },
+            "description": "Logout the current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "refreshToken=<refresh_token>",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "refresh-token"]
+            },
+            "description": "Refresh the access token"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recharge Information",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/recharge-user",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "recharge-user"]
+            },
+            "description": "Get recharge information for the user"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"updated_username\",\n  \"phone\": \"0987654321\",\n  \"avatar\": \"image_url\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/update-user",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "update-user"]
+            },
+            "description": "Update user profile information"
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"current_password\",\n  \"newPassword\": \"new_password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "change-password"]
+            },
+            "description": "Change user password"
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "forgot-password"]
+            },
+            "description": "Send password reset link to email"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset_token\",\n  \"newPassword\": \"new_password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reset-password"]
+            },
+            "description": "Reset password using token"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/get-users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-users"]
+            },
+            "description": "Get all users (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admin Stats (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/get-admin-stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-admin-stats"]
+            },
+            "description": "Get admin dashboard statistics (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recharge Stats (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/get-recharge-stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-recharge-stats"]
+            },
+            "description": "Get recharge statistics (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User by Admin (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"updated_username\",\n  \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/update-user-by-admin/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "update-user-by-admin", "{{userId}}"]
+            },
+            "description": "Update user by admin (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"user_id\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delete-user",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delete-user"]
+            },
+            "description": "Delete user (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Hot Search Keywords",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/get-hot-search",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-hot-search"]
+            },
+            "description": "Get hot search keywords"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Keywords",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/search?q=test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "test"
+                }
+              ]
+            },
+            "description": "Search for keywords"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Search Keyword",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"search_keyword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/add-search-keyword",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "add-search-keyword"]
+            },
+            "description": "Add a search keyword"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Search Keywords",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/get-search-keyword",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-search-keyword"]
+            },
+            "description": "Get search keywords"
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin"]
+            },
+            "description": "Check if user is admin"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Post Management",
+      "item": [
+        {
+          "name": "Create Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Room for rent\",\n  \"description\": \"Beautiful room for rent near downtown\",\n  \"price\": 2000000,\n  \"location\": \"Ho Chi Minh City\",\n  \"images\": [\"image_url1\", \"image_url2\"],\n  \"area\": 25,\n  \"contact\": {\n    \"name\": \"John Doe\",\n    \"phone\": \"0123456789\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/create-post",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "create-post"]
+            },
+            "description": "Create a new post"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Posts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/get-posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-posts"]
+            },
+            "description": "Get all posts"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Post by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/get-post-by-id?id=672b1b1b1b1b1b1b1b1b1b1b",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-post-by-id"],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "672b1b1b1b1b1b1b1b1b1b1b"
+                }
+              ]
+            },
+            "description": "Get post by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Posts by User ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/get-post-by-user-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-post-by-user-id"]
+            },
+            "description": "Get posts by current user ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get New Posts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/get-new-post",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-new-post"]
+            },
+            "description": "Get new posts"
+          },
+          "response": []
+        },
+        {
+          "name": "Get VIP Posts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/get-post-vip",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-post-vip"]
+            },
+            "description": "Get VIP posts"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postId\": \"672b1b1b1b1b1b1b1b1b1b1b\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delete-post",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delete-post"]
+            },
+            "description": "Delete a post"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Post",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Room for rent\",\n  \"description\": \"Updated description for the room\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/update-post/{{postId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "update-post", "{{postId}}"]
+            },
+            "description": "Update a post"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Posts (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/get-all-posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-all-posts"]
+            },
+            "description": "Get all posts (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Post (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postId\": \"672b1b1b1b1b1b1b1b1b1b1b\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/approve-post",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "approve-post"]
+            },
+            "description": "Approve a post (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Post (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postId\": \"672b1b1b1b1b1b1b1b1b1b1b\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reject-post",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reject-post"]
+            },
+            "description": "Reject a post (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Post Suggest",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/post-suggest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "post-suggest"]
+            },
+            "description": "Get post suggestions"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payment Management",
+      "item": [
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100000,\n  \"description\": \"Payment for VIP post\",\n  \"paymentMethod\": \"vnpay\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments"]
+            },
+            "description": "Create a payment"
+          },
+          "response": []
+        },
+        {
+          "name": "Check VNPay Payment",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/check-payment-vnpay?vnp_Amount=100000&vnp_TxnRef=transaction_id&vnp_ResponseCode=0&vnp_SecureHash=hash_value",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "check-payment-vnpay"],
+              "query": [
+                {
+                  "key": "vnp_Amount",
+                  "value": "100000"
+                },
+                {
+                  "key": "vnp_TxnRef",
+                  "value": "transaction_id"
+                },
+                {
+                  "key": "vnp_ResponseCode",
+                  "value": "0"
+                },
+                {
+                  "key": "vnp_SecureHash",
+                  "value": "hash_value"
+                }
+              ]
+            },
+            "description": "Check VNPay payment result"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Momo Payment",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/check-payment-momo",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "check-payment-momo"]
+            },
+            "description": "Check Momo payment result"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Messenger Management",
+      "item": [
+        {
+          "name": "Create Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderId\": \"672b1b1b1b1b1b1b1b1b1b1b\",\n  \"recipientId\": \"672b1b1b1b1b1b1b1b1b1b1c\",\n  \"message\": \"Hello, I am interested in your post!\",\n  \"postId\": \"672b1b1b1b1b1b1b1b1b1b1d\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/create-message",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "create-message"]
+            },
+            "description": "Create a new message"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/get-messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-messages"]
+            },
+            "description": "Get messages (with query parameters for filtering)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messages by User ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/get-messages-by-user-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-messages-by-user-id"]
+            },
+            "description": "Get messages by user ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Message as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messageId\": \"672b1b1b1b1b1b1b1b1b1b1e\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mark-message-read",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mark-message-read"]
+            },
+            "description": "Mark a message as read"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All Messages as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"672b1b1b1b1b1b1b1b1b1b1b\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mark-all-messages-read",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mark-all-messages-read"]
+            },
+            "description": "Mark all messages as read"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Favorite Management",
+      "item": [
+        {
+          "name": "Create Favorite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postId\": \"672b1b1b1b1b1b1b1b1b1b1b\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/create-favourite",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "create-favourite"]
+            },
+            "description": "Add a post to favorites"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Favorite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postId\": \"672b1b1b1b1b1b1b1b1b1b1b\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delete-favourite",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delete-favourite"]
+            },
+            "description": "Remove a post from favorites"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Favorites",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/get-favourite",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "get-favourite"]
+            },
+            "description": "Get user's favorite posts"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "File Upload",
+      "item": [
+        {
+          "name": "Upload Images",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": "/path/to/image1.jpg"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": "/path/to/image2.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload-images",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload-images"]
+            },
+            "description": "Upload multiple images"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": "/path/to/avatar.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/upload-image",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "upload-image"]
+            },
+            "description": "Upload a single image (avatar)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Services",
+      "item": [
+        {
+          "name": "Chat with AI",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"How can I find a room in District 1?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat"]
+            },
+            "description": "Chat with the AI assistant"
+          },
+          "response": []
+        },
+        {
+          "name": "AI Search",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ai-search?question=room rental in District 1",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-search"],
+              "query": [
+                {
+                  "key": "question",
+                  "value": "room rental in District 1"
+                }
+              ]
+            },
+            "description": "Search using AI"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Additional Endpoints",
+      "item": [
+        {
+          "name": "Add Search (Additional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"search_term\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/add-search",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "add-search"]
+            },
+            "description": "Additional search endpoint"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}

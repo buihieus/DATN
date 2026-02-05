@@ -1,0 +1,27 @@
+.create-post-container {
+  width: 90%;
+  max-width: 80%;
+  margin: 100px auto 40px auto;
+  padding: 20px 0;
+}
+
+@media (max-width: 768px) {
+  .create-post-container {
+    width: 95%;
+    margin: calc(40px + env(safe-area-inset-top, 20px)) auto 20px auto;
+    padding: 15px 10px;
+  }
+  
+  .create-post-container .ant-card {
+    padding: 16px !important;
+  }
+  
+  .create-post-container .ant-card .ant-typography {
+    margin-bottom: 16px !important;
+  }
+  
+  .create-post-container .ant-card .anticon-file-text {
+    font-size: 40px !important;
+    margin-bottom: 12px !important;
+  }
+}

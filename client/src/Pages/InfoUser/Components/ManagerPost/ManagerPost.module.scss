@@ -1,0 +1,30 @@
+.content-card {
+    border-radius: 8px;
+    background: #f9f9f9;
+    border: 1px solid #f0f0f0;
+    text-align: center;
+    padding: 40px 0;
+}
+
+.content-icon {
+    font-size: 48px;
+    color: #1890ff;
+    margin-bottom: 16px;
+}
+.stat-card {
+    height: 100%;
+    border-radius: 8px;
+    text-align: center;
+
+    :global(.ant-statistic-title) {
+        white-space: nowrap;      /* KHÔNG xuống dòng */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 14px;
+    }
+
+    :global(.ant-statistic-content) {
+        font-size: 22px;
+        font-weight: 600;
+    }
+}
