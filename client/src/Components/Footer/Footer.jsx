@@ -2,8 +2,6 @@ import React from 'react';
 import './Footer.scss';
 
 function Footer() {
-    const currentYear = new Date().getFullYear();
-
     return (
         <footer className="footer">
             <div className="footer-content">
@@ -42,9 +40,6 @@ function Footer() {
                 </div>
             </div>
             
-            <div className="footer-bottom">
-                <p>&copy; {currentYear} PhongTro123. Tất cả các quyền được bảo lưu.</p>
-            </div>
         </footer>
     );
 }

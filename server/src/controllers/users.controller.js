@@ -900,12 +900,88 @@ class controllerUsers {
 
     async searchKeyword(req, res) {
         const { keyword } = req.query;
+        
         if (!keyword) {
+            // If no keyword provided, return hot searches
             const hotSearch = await modelKeyWordSearch.find().sort({ count: -1 }).limit(5);
             return new OK({ message: 'Lấy từ khóa tìm kiếm thành công', metadata: hotSearch }).send(res);
         } else {
-            const result = await AiSearchKeyword(keyword);
-            return new OK({ message: 'Lấy từ khóa tìm kiếm thành công', metadata: result }).send(res);
+            // Helper function to remove accents/diacritics from Vietnamese text
+            const removeAccents = (str) => {
+                if (!str) return str;
+                return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+            };
+
+            // Log the search keyword for debugging
+            console.log('Searching for keyword:', keyword);
+            
+            // Create a case-insensitive regex pattern for the keyword (both with and without accents)
+            const keywordWithoutAccents = removeAccents(keyword);
+            const searchRegex = new RegExp(keyword, 'i');
+            const searchRegexWithoutAccents = new RegExp(keywordWithoutAccents, 'i');
+            
+            // Search in the post collection across the required fields
+            // Only return posts with active status
+            const posts = await modelPost.find({
+                $and: [
+                    {
+                        $or: [
+                            { 
+                                $or: [
+                                    { 'title': { $regex: searchRegex } },                    // Search in title (with accents)
+                                    { 'title': { $regex: searchRegexWithoutAccents } }       // Search in title (without accents)
+                                ]
+                            },
+                            { 
+                                $or: [
+                                    { 'address.provinceCode': { $regex: searchRegex } },     // Search in province code (with accents)
+                                    { 'address.provinceCode': { $regex: searchRegexWithoutAccents } } // Search in province code (without accents)
+                                ]
+                            },
+                            { 
+                                $or: [
+                                    { 'address.wardCode': { $regex: searchRegex } },         // Search in ward code (with accents)
+                                    { 'address.wardCode': { $regex: searchRegexWithoutAccents } } // Search in ward code (without accents)
+                                ]
+                            },
+                            { 
+                                $or: [
+                                    { 'address.street': { $regex: searchRegex } },           // Search in street/address detail (with accents)
+                                    { 'address.street': { $regex: searchRegexWithoutAccents } } // Search in street/address detail (without accents)
+                                ]
+                            },
+                            { 
+                                $or: [
+                                    { 'address.fullAddress': { $regex: searchRegex } },      // Search in full address (with accents)
+                                    { 'address.fullAddress': { $regex: searchRegexWithoutAccents } } // Search in full address (without accents)
+                                ]
+                            },
+                            { 
+                                $or: [
+                                    { 'location': { $regex: searchRegex } },                // Search in legacy location field (with accents)
+                                    { 'location': { $regex: searchRegexWithoutAccents } }   // Search in legacy location field (without accents)
+                                ]
+                            }
+                        ]
+                    },
+                    { 'status': 'active' }  // Only include active posts
+                ]
+            }).populate('userId', 'fullName avatar phone'); // Populate user info
+            
+            // Log the number of results for debugging
+            console.log('Number of search results:', posts.length);
+            
+            // Also log some details about the posts for debugging
+            if (posts.length > 0) {
+                console.log('Sample post statuses:', posts.slice(0, 3).map(p => ({ 
+                    id: p._id, 
+                    title: p.title, 
+                    status: p.status,
+                    fullAddress: p.address?.fullAddress
+                })));
+            }
+            
+            return new OK({ message: 'Tìm kiếm bài đăng thành công', metadata: posts }).send(res);
         }
     }
 

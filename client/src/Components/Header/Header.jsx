@@ -3,7 +3,7 @@ import classNames from 'classnames/bind';
 import styles from './Header.module.scss';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import logo from '../../assets/images/logo.svg';
-import { Dropdown, Avatar, Space, Button, Popover, Input, Modal, Table } from 'antd';
+import { Dropdown, Avatar, Space, Button, Popover, Input, Modal, Table, Select } from 'antd';
 import {
   UserOutlined,
   HeartOutlined,
@@ -16,8 +16,10 @@ import {
   DownOutlined
 } from '@ant-design/icons';
 
+const { Option } = Select;
+
 import { useStore } from '../../hooks/useStore';
-import { requestLogout } from '../../config/request';
+import { requestLogout, requestGetLocations } from '../../config/request';
 import cookies from "js-cookie";
 
 import FilterPanel from '../filter/FilterPanel';
@@ -38,6 +40,11 @@ function Header() {
     const [activeCategory, setActiveCategory] = useState('');
     const [isServiceModalVisible, setIsServiceModalVisible] = useState(false);
     const [isPostModalVisible, setIsPostModalVisible] = useState(false);
+    const [provinces, setProvinces] = useState([]);
+    const [wards, setWards] = useState([]);
+    const [isLocationModalVisible, setIsLocationModalVisible] = useState(false);
+    const [tempProvince, setTempProvince] = useState('');
+    const [tempWard, setTempWard] = useState([]);
 
     // Initialize state from URL parameters on mount and when location changes
     useEffect(() => {
@@ -52,6 +59,57 @@ function Header() {
         }));
     }, [location.search]);
 
+    // Load provinces when component mounts
+    useEffect(() => {
+        const fetchProvinces = async () => {
+            try {
+                const response = await requestGetLocations();
+                setProvinces(response.metadata?.provinces || []);
+            } catch (error) {
+                console.error('Error fetching provinces:', error);
+            }
+        };
+        fetchProvinces();
+    }, []);
+
+    // Load wards when province is selected
+    useEffect(() => {
+        if (currentFilters.province) {
+            const fetchWards = async () => {
+                try {
+                    const response = await requestGetLocations(currentFilters.province);
+                    setWards(response.metadata?.wards || []);
+                } catch (error) {
+                    console.error('Error fetching wards:', error);
+                }
+            };
+            fetchWards();
+        } else {
+            setWards([]);
+        }
+    }, [currentFilters.province]);
+
+    // Sync temp values with current filters when modal opens
+    useEffect(() => {
+        if (isLocationModalVisible) {
+            setTempProvince(currentFilters.province || '');
+            setTempWard(currentFilters.ward || '');
+            
+            // Load wards for the selected province
+            if (currentFilters.province) {
+                const fetchWards = async () => {
+                    try {
+                        const response = await requestGetLocations(currentFilters.province);
+                        setWards(response.metadata?.wards || []);
+                    } catch (error) {
+                        console.error('Error fetching wards:', error);
+                    }
+                };
+                fetchWards();
+            }
+        }
+    }, [isLocationModalVisible, currentFilters.province, currentFilters.ward]);
+
     // ✅ LOGOUT KHÔNG RELOAD
     const handleLogout = async () => {
         try {
@@ -65,6 +123,49 @@ function Header() {
             navigate('/');
         } catch (error) {
             console.log(error);
+        }
+    };
+
+    // Handle location selection and apply filters
+    const handleLocationSelection = () => {
+        const newFilters = { 
+            ...currentFilters, 
+            province: tempProvince,
+            ward: tempWard
+        };
+        
+        setCurrentFilters(newFilters);
+        
+        // Apply filters immediately by updating the URL
+        const queryString = new URLSearchParams();
+        
+        if (newFilters.category) queryString.set('category', newFilters.category);
+        if (newFilters.province) queryString.set('province', newFilters.province);
+        if (newFilters.ward) queryString.set('ward', newFilters.ward);
+        
+        // Navigate to homepage with all filter parameters
+        const fullUrl = `/?${queryString.toString()}`;
+        navigate(fullUrl);
+        
+        // Close the modal
+        setIsLocationModalVisible(false);
+    };
+
+    // Handle province change in modal
+    const handleProvinceChange = async (value) => {
+        setTempProvince(value);
+        setTempWard(''); // Reset ward when province changes
+        
+        // Load wards for the selected province
+        if (value) {
+            try {
+                const response = await requestGetLocations(value);
+                setWards(response.metadata?.wards || []);
+            } catch (error) {
+                console.error('Error fetching wards:', error);
+            }
+        } else {
+            setWards([]);
         }
     };
 
@@ -446,14 +547,16 @@ function Header() {
                         <Input
                             prefix={<EnvironmentOutlined />}
                             placeholder="Tìm theo khu vực"
-                            onChange={(e) => setValueSearch(e.target.value)}
-                            onFocus={() => setIsSearchFocused(true)}
-                            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                            onPressEnter={(e) => {
-                                if (e.target.value.trim()) {
-                                    navigate(`/search/${e.target.value.trim()}`);
-                                }
-                            }}
+                            value={
+                                (currentFilters.province ? 
+                                    provinces.find(p => p.Code === currentFilters.province)?.Name || currentFilters.province 
+                                    : '') +
+                                (currentFilters.ward ? 
+                                    (currentFilters.province ? ', ' : '') + 
+                                    wards.find(w => w.Code === currentFilters.ward)?.Name || currentFilters.ward 
+                                    : '')
+                            }
+                            onClick={() => setIsLocationModalVisible(true)}
                             style={{
                                 borderRadius: '20px 0 0 20px',
                                 borderRight: 'none',
@@ -582,6 +685,66 @@ function Header() {
                     </Dropdown> */}
                 </div>
             </div>
+
+            {/* LOCATION SELECTION MODAL */}
+            <Modal
+                title="Chọn khu vực"
+                open={isLocationModalVisible}
+                onCancel={() => setIsLocationModalVisible(false)}
+                onOk={handleLocationSelection}
+                okText="Áp dụng"
+                cancelText="Hủy"
+                width={500}
+            >
+                <div style={{ marginTop: '16px' }}>
+                    <div style={{ marginBottom: '16px' }}>
+                        <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                            Tỉnh/Thành phố
+                        </label>
+                        <Select
+                            placeholder="Chọn tỉnh/thành phố"
+                            value={tempProvince}
+                            onChange={handleProvinceChange}
+                            style={{ width: '100%' }}
+                            showSearch
+                            optionFilterProp="children"
+                            filterOption={(input, option) =>
+                                option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                            }
+                        >
+                            {provinces.map(province => (
+                                <Option key={province.Code} value={province.Code}>
+                                    {province.Name}
+                                </Option>
+                            ))}
+                        </Select>
+                    </div>
+                    
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>
+                            Phường/Xã
+                        </label>
+                        <Select
+                            placeholder="Chọn phường/xã"
+                            value={tempWard}
+                            onChange={(value) => setTempWard(value)}
+                            style={{ width: '100%' }}
+                            showSearch
+                            optionFilterProp="children"
+                            filterOption={(input, option) =>
+                                option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                            }
+                            disabled={!tempProvince}
+                        >
+                            {wards.map(ward => (
+                                <Option key={ward.Code} value={ward.Code}>
+                                    {ward.Name}
+                                </Option>
+                            ))}
+                        </Select>
+                    </div>
+                </div>
+            </Modal>
 
             {/* FILTER MODAL */}
             <Modal
