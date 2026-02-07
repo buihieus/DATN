@@ -463,7 +463,18 @@ class controllerPosts {
 
     async getPostById(req, res) {
         const { id } = req.query;
+        
+        // Check if id is provided
+        if (!id) {
+            throw new BadRequestError('Post ID is required');
+        }
+        
         const data = await modelPost.findById(id);
+
+        // Handle case where post is not found
+        if (!data) {
+            throw new BadRequestError('Post not found');
+        }
 
         // Handle case where userId is 'admin' or user doesn't exist
         let findUser = null;

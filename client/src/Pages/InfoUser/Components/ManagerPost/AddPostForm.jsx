@@ -742,13 +742,13 @@ const normFile = (e) => {
 };
 
 const dataSource = [
-    {
-        key: '1',
-        typeNews: 'Tin VIP',
-        '3 ngày': 50000,
-        '7 ngày': 315000,
-        '30 ngày': 1200000,
-    },
+    // {
+    //     key: '1',
+    //     typeNews: 'Tin VIP',
+    //     '3 ngày': 50000,
+    //     '7 ngày': 315000,
+    //     '30 ngày': 1200000,
+    // },
     {
         key: '2',
         typeNews: 'Tin thường',

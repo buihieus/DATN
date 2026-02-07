@@ -469,13 +469,13 @@ function Header() {
 
     // Service pricing data
     const servicePricingData = [
-        {
-            key: '1',
-            loaiTin: 'Tin VIP',
-            threeDays: '50.000 VNĐ',
-            sevenDays: '315.000 VNĐ',
-            thirtyDays: '1.200.000 VNĐ',
-        },
+        // {
+        //     key: '1',
+        //     loaiTin: 'Tin VIP',
+        //     threeDays: '50.000 VNĐ',
+        //     sevenDays: '315.000 VNĐ',
+        //     thirtyDays: '1.200.000 VNĐ',
+        // },
         {
             key: '2',
             loaiTin: 'Tin thường',

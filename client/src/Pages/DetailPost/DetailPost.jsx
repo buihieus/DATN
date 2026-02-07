@@ -16,6 +16,7 @@ import {
     requestDeleteFavourite,
     requestGetPostById,
     requestGetPostVip,
+    requestGetPosts,
 } from '../../config/request';
 import { useStore } from '../../hooks/useStore';
 import { useSocket } from '../../hooks/useSocket';
@@ -38,8 +39,8 @@ function DetailPost() {
     const [userHeart, setUserHeart] = useState([]);
     const [loadingFavorites, setLoadingFavorites] = useState(false);
 
-    const [postVip, setPostVip] = useState([]);
-    const [loadingVipPosts, setLoadingVipPosts] = useState(true);
+    const [otherPosts, setOtherPosts] = useState([]);
+    const [loadingOtherPosts, setLoadingOtherPosts] = useState(true);
 
     // Optimized fetch function for post details
     const fetchPost = useCallback(async () => {
@@ -53,7 +54,12 @@ function DetailPost() {
             document.title = `${res.metadata.data.title} - PhongTro123`;
         } catch (error) {
             console.error('Error fetching post:', error);
-            message.error('Không thể tải thông tin bài viết');
+            // Check if it's a 404 error (post not found)
+            if (error.response?.status === 404 || error.message?.includes('Post not found')) {
+                message.error('Bài đăng không tồn tại hoặc đã bị xóa');
+            } else {
+                message.error('Không thể tải thông tin bài viết');
+            }
         } finally {
             setLoadingPost(false);
             setLoadingUser(false); // Since user data comes with the post
@@ -63,15 +69,15 @@ function DetailPost() {
     // Optimized fetch function for other posts - with caching consideration
     const fetchOtherPosts = useCallback(async () => {
         try {
-            setLoadingVipPosts(true);
-            // Lấy các bài đăng thường thay vì VIP
+            setLoadingOtherPosts(true);
+            // Lấy các bài đăng thường thay chứ không phải VIP
             const res = await requestGetPosts({ limit: 5 });
-            setPostVip(res.metadata.posts || []);
+            setOtherPosts(res.metadata.posts || []);
         } catch (error) {
             console.error('Error fetching other posts:', error);
-            setPostVip([]); // Set empty array instead of failing
+            setOtherPosts([]); // Set empty array instead of failing
         } finally {
-            setLoadingVipPosts(false);
+            setLoadingOtherPosts(false);
         }
     }, []);
 
@@ -90,7 +96,7 @@ function DetailPost() {
         };
 
         loadData();
-    }, [fetchPost, fetchPostVip]);
+    }, [fetchPost, fetchOtherPosts]);
 
     const { dataUser, setDataMessages } = useStore();
     const { usersMessage, setUsersMessage } = useSocket();
@@ -305,18 +311,18 @@ function DetailPost() {
                         <div className={cx('featured-listings')}>
                             <h3 className={cx('featured-title')}>Các tin đăng khác</h3>
                             
-                            {loadingVipPosts ? (
-                                <div className={cx('loading-vip')}>
+                            {loadingOtherPosts ? (
+                                <div className={cx('loading-other')}>
                                     <FontAwesomeIcon icon={faSpinner} spin />
                                     <span>Đang tải...</span>
                                 </div>
                             ) : (
-                                postVip.map((item, index) => (
+                                otherPosts.map((item, index) => (
                                     <div className={cx('listing-item')} key={item._id || index}>
                                         <div className={cx('listing-image')}>
-                                            <img 
-                                                src={item.images[0]} 
-                                                alt="Phòng trọ cao cấp" 
+                                            <img
+                                                src={item.images[0]}
+                                                alt="Phòng trọ cao cấp"
                                                 onError={(e) => {
                                                     e.target.style.display = 'none';
                                                 }}
