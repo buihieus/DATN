@@ -221,21 +221,24 @@ function DetailPost() {
                                     <span className={cx('address-text')}>{post?.address?.fullAddress || post?.location || 'Địa chỉ chưa được cập nhật'}</span>
                                 </div>
 
-                                {/* Optimized map loading with lazy loading and fallback */}
+                                {/* Optimized map loading with embedded Google Maps using coordinates if available */}
                                 <div className={cx('map-frame')}>
                                     {post?.address?.fullAddress || post?.location ? (
                                         <div className={cx('map-interactive')}>
-                                            <a
-                                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(post?.address?.fullAddress || post?.location)}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className={cx('map-link')}
-                                            >
-                                                <div className={cx('map-placeholder')}>
-                                                    <p>📍 Xem vị trí trên Google Maps</p>
-                                                    <p>{post?.address?.fullAddress || post?.location}</p>
-                                                </div>
-                                            </a>
+                                            <iframe
+                                                src={
+                                                    post?.address?.latitude && post?.address?.longitude
+                                                        ? `https://www.google.com/maps/embed/v1/place?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "AIzaSyDGODufigYaWvP-Lg2nmzoRkKd3QbqUsR0"}&q=${post.address.latitude},${post.address.longitude}&zoom=15`
+                                                        : `https://www.google.com/maps?q=${encodeURIComponent(post?.address?.fullAddress || post?.location)}&output=embed`
+                                                }
+                                                width="100%"
+                                                height="350"
+                                                style={{ border: 0 }}
+                                                allowFullScreen
+                                                loading="lazy"
+                                                referrerPolicy="no-referrer-when-downgrade"
+                                                title="Property Location Map"
+                                            />
                                         </div>
                                     ) : (
                                         <div className={cx('map-placeholder')}>

@@ -1,83 +1,164 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
-import { Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useAuthStore } from '../../store/useUserStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadService } from '../../services/uploadService';
+import { useAuthStore } from '../../store/useUserStore';
+import { API_BASE_URL } from '../../services/apiConfig';
+
+// Helper function to fix avatar URLs that point to localhost
+const fixAvatarUrl = (url: string | null): string | null => {
+  if (!url) return null;
+  
+  // If it's already a local file URI, return as is
+  if (url.startsWith('file://') || url.startsWith('content://')) {
+    return url;
+  }
+  
+  // Replace localhost or 127.0.0.1 with the actual API base URL
+  return url.replace(/^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?/, API_BASE_URL);
+};
 
 export default function EditProfileScreen() {
-  const { user, isAuthenticated, updateProfile } = useAuthStore();
+  const { user, isAuthenticated, updateProfile, getUserData } = useAuthStore();
+  
+  // Form state
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [avatar, setAvatar] = useState<string | null>(null);
-  const [avatarChanged, setAvatarChanged] = useState(false);
+  
+  // Avatar state - use ref to prevent re-renders from resetting it
+  const avatarUriRef = React.useRef<string | null>(null);
+  const originalAvatarRef = React.useRef<string | null>(null);
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [hasAvatarChanged, setHasAvatarChanged] = useState(false);
+  
+  // Loading state
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Initialize form data from user store (only once on mount)
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace('/auth/login');
+      return;
     }
-    
+
     if (user) {
       setFullName(user.fullName || '');
       setPhone(user.phone || '');
       setAddress(user.address || '');
-      setAvatar(user.avatar || null);
+      
+      // Fix and set avatar URL
+      const fixedAvatar = fixAvatarUrl(user.avatar || null);
+      avatarUriRef.current = fixedAvatar;
+      originalAvatarRef.current = fixedAvatar;
+      setAvatarUri(fixedAvatar);
+      setHasAvatarChanged(false);
+      
+      console.log('EditProfile: Initialized with avatar:', fixedAvatar);
     }
-  }, [user, isAuthenticated]);
+    // Only run once on mount, not when user changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Don't render anything if not authenticated, useEffect will handle navigation
   if (!isAuthenticated) {
     return null;
   }
 
-  const selectAvatar = async () => {
-    // Request permission to access media library
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const pickImage = () => {
+    console.log('PickImage: Starting...');
     
-    if (permissionResult.granted === false) {
-      Alert.alert('Quyền truy cập bị từ chối', 'Bạn cần cấp quyền truy cập thư viện ảnh để chọn ảnh đại diện');
-      return;
-    }
-    
-    // Launch image picker
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const selectedImage = result.assets[0].uri;
-      setAvatar(selectedImage);
-      setAvatarChanged(true);
-    }
+    ImagePicker.requestMediaLibraryPermissionsAsync()
+      .then((permissionResult) => {
+        console.log('PickImage: Permission result:', permissionResult.granted);
+        
+        if (!permissionResult.granted) {
+          console.log('PickImage: Permission denied');
+          Alert.alert('Quyền truy cập bị từ chối', 'Bạn cần cấp quyền truy cập thư viện ảnh để chọn ảnh đại diện');
+          return;
+        }
+
+        console.log('PickImage: Launching image picker...');
+        
+        return ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+      })
+      .then((result) => {
+        console.log('PickImage: Got result:', {
+          canceled: result.canceled,
+          assetsCount: result.assets?.length,
+        });
+        
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const selectedUri = result.assets[0].uri;
+          console.log('=== PICK IMAGE ===');
+          console.log('Selected URI:', selectedUri);
+          avatarUriRef.current = selectedUri;
+          setAvatarUri(selectedUri);
+          setHasAvatarChanged(true);
+          console.log('Avatar ref updated:', avatarUriRef.current);
+          console.log('Has avatar changed:', true);
+          console.log('===================');
+        } else {
+          console.log('PickImage: Canceled or no assets');
+        }
+      })
+      .catch((error) => {
+        console.error('PickImage: Error -', error?.message || error);
+        Alert.alert('Lỗi', 'Không thể chọn ảnh. Vui lòng thử lại.');
+      });
   };
 
-  const takePhoto = async () => {
-    // Request permission to access camera
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+  const takePhoto = () => {
+    console.log('TakePhoto: Starting...');
     
-    if (permissionResult.granted === false) {
-      Alert.alert('Quyền truy cập bị từ chối', 'Bạn cần cấp quyền truy cập camera để chụp ảnh');
-      return;
-    }
-    
-    // Launch camera
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const capturedImage = result.assets[0].uri;
-      setAvatar(capturedImage);
-      setAvatarChanged(true);
-    }
+    ImagePicker.requestCameraPermissionsAsync()
+      .then((permissionResult) => {
+        console.log('TakePhoto: Permission result:', permissionResult.granted);
+        
+        if (!permissionResult.granted) {
+          console.log('TakePhoto: Permission denied');
+          Alert.alert('Quyền truy cập bị từ chối', 'Bạn cần cấp quyền truy cập camera để chụp ảnh');
+          return;
+        }
+
+        console.log('TakePhoto: Launching camera...');
+        
+        return ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+      })
+      .then((result) => {
+        console.log('TakePhoto: Got result:', {
+          canceled: result.canceled,
+          assetsCount: result.assets?.length,
+        });
+        
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const capturedUri = result.assets[0].uri;
+          console.log('=== TAKE PHOTO ===');
+          console.log('Captured URI:', capturedUri);
+          avatarUriRef.current = capturedUri;
+          setAvatarUri(capturedUri);
+          setHasAvatarChanged(true);
+          console.log('Avatar ref updated:', avatarUriRef.current);
+          console.log('==================');
+        } else {
+          console.log('TakePhoto: Canceled or no assets');
+        }
+      })
+      .catch((error) => {
+        console.error('TakePhoto: Error -', error?.message || error);
+        Alert.alert('Lỗi', 'Không thể chụp ảnh. Vui lòng thử lại.');
+      });
   };
 
   const showAvatarOptions = () => {
@@ -91,7 +172,7 @@ export default function EditProfileScreen() {
         },
         {
           text: 'Chọn từ thư viện',
-          onPress: selectAvatar,
+          onPress: pickImage,
         },
         {
           text: 'Hủy',
@@ -107,29 +188,87 @@ export default function EditProfileScreen() {
       return;
     }
 
-    try {
-      // Process avatar upload if it's a local file URI
-      let processedAvatar = avatar;
+    setIsLoading(true);
 
-      if (avatar && avatar.startsWith('file://')) {
-        // Upload the avatar to the server first
-        const uploadResponse = await uploadService.uploadAvatar(avatar);
-        processedAvatar = uploadResponse.image; // Use the server URL instead of local URI
+    try {
+      let finalAvatarUri = originalAvatarRef.current;
+
+      console.log('=== HANDLE SAVE ===');
+      console.log('Current avatarUri state:', avatarUri);
+      console.log('Current avatarUri ref:', avatarUriRef.current);
+      console.log('Original avatar ref:', originalAvatarRef.current);
+      console.log('Has avatar changed:', hasAvatarChanged);
+
+      // If avatar was changed, upload the new image
+      if (hasAvatarChanged && avatarUriRef.current) {
+        console.log('Avatar changed, uploading new image...');
+        
+        // Check if it's a local file that needs uploading
+        const isLocalFile = avatarUriRef.current.startsWith('file://') || avatarUriRef.current.startsWith('content://');
+        console.log('Is local file:', isLocalFile);
+        
+        if (isLocalFile) {
+          try {
+            console.log('Starting uploadAvatar with URI:', avatarUriRef.current);
+            const uploadResponse = await uploadService.uploadAvatar(avatarUriRef.current);
+            console.log('Upload response received:', uploadResponse);
+            
+            if (uploadResponse && uploadResponse.image) {
+              finalAvatarUri = uploadResponse.image;
+              console.log('Uploaded avatar URL:', finalAvatarUri);
+            } else {
+              console.error('Upload response missing image property');
+              throw new Error('Upload response did not contain image URL');
+            }
+          } catch (uploadError: any) {
+            console.error('Upload error details:', {
+              message: uploadError.message,
+              stack: uploadError.stack,
+            });
+            Alert.alert('Lỗi', `Không thể tải ảnh lên: ${uploadError.message || 'Vui lòng thử lại'}`);
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          // Avatar is already a URL (could be from previous upload or placeholder)
+          finalAvatarUri = avatarUriRef.current;
+          console.log('Using existing URL:', finalAvatarUri);
+        }
       }
 
-      // Update the profile with the processed avatar URL
-      await updateProfile({ fullName, phone, address, avatar: processedAvatar });
+      console.log('Final avatar URL to save:', finalAvatarUri);
+
+      // Update profile on server
+      console.log('Calling updateProfile with:', { fullName, phone, address, avatar: finalAvatarUri });
+      await updateProfile({
+        fullName,
+        phone,
+        address,
+        avatar: finalAvatarUri
+      });
+      console.log('Profile updated successfully');
+
+      // Refresh user data from server to get latest data
+      console.log('Refreshing user data...');
+      await getUserData();
+      console.log('User data refreshed');
+
+      console.log('=====================');
+
       Alert.alert('Thành công', 'Cập nhật thông tin thành công!', [
         {
           text: 'OK',
-          onPress: () => {
-            // Navigate back to the profile screen to refresh the data
-            router.back();
-          }
+          onPress: () => router.back()
         }
       ]);
-    } catch (error) {
-      Alert.alert('Lỗi', 'Có lỗi xảy ra khi cập nhật thông tin');
+    } catch (error: any) {
+      console.error('Update profile error:', {
+        message: error.message,
+        stack: error.stack,
+      });
+      Alert.alert('Lỗi', error?.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -138,21 +277,38 @@ export default function EditProfileScreen() {
       <View style={styles.form}>
         {/* Avatar Section */}
         <View style={styles.avatarSection}>
-          <TouchableOpacity style={styles.avatarContainer} onPress={showAvatarOptions}>
-            {avatar ? (
-              <Image source={{ uri: avatar }} style={styles.avatarImage} />
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={showAvatarOptions}
+            activeOpacity={0.7}
+          >
+            {avatarUri ? (
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.avatarImage}
+                contentFit="cover"
+                cachePolicy="memory"
+                onError={(error) => {
+                  console.error('Avatar load error:', error);
+                  console.log('Failed avatar URL:', avatarUri);
+                }}
+                onLoad={() => {
+                  console.log('Avatar loaded successfully:', avatarUri);
+                }}
+              />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={40} color="#8E8E93" />
+                <Ionicons name="person" size={50} color="#8E8E93" />
               </View>
             )}
             <View style={styles.cameraIcon}>
-              <Ionicons name="camera" size={20} color="white" />
+              <Ionicons name="camera" size={22} color="white" />
             </View>
           </TouchableOpacity>
           <Text style={styles.avatarLabel}>Chạm để thay đổi ảnh đại diện</Text>
         </View>
 
+        {/* Full Name Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Họ tên</Text>
           <TextInput
@@ -160,9 +316,11 @@ export default function EditProfileScreen() {
             value={fullName}
             onChangeText={setFullName}
             placeholder="Nhập họ tên của bạn"
+            placeholderTextColor="#999"
           />
         </View>
 
+        {/* Phone Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Số điện thoại</Text>
           <TextInput
@@ -171,9 +329,11 @@ export default function EditProfileScreen() {
             onChangeText={setPhone}
             placeholder="Nhập số điện thoại"
             keyboardType="phone-pad"
+            placeholderTextColor="#999"
           />
         </View>
 
+        {/* Address Input */}
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Địa chỉ</Text>
           <TextInput
@@ -181,11 +341,22 @@ export default function EditProfileScreen() {
             value={address}
             onChangeText={setAddress}
             placeholder="Nhập địa chỉ của bạn"
+            placeholderTextColor="#999"
           />
         </View>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
+        {/* Save Button */}
+        <TouchableOpacity
+          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={isLoading}
+          activeOpacity={0.7}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -203,6 +374,7 @@ const styles = StyleSheet.create({
   avatarSection: {
     alignItems: 'center',
     marginBottom: 30,
+    marginTop: 10,
   },
   avatarContainer: {
     position: 'relative',
@@ -213,6 +385,7 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     borderWidth: 3,
     borderColor: '#007AFF',
+    backgroundColor: '#E0E0E0',
   },
   avatarPlaceholder: {
     width: 120,
@@ -226,8 +399,8 @@ const styles = StyleSheet.create({
   },
   cameraIcon: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: 5,
+    right: 5,
     backgroundColor: '#007AFF',
     borderRadius: 20,
     padding: 8,
@@ -235,10 +408,12 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   avatarLabel: {
     marginTop: 15,
-    fontSize: 16,
+    fontSize: 15,
     color: '#007AFF',
     fontWeight: '500',
   },
@@ -246,25 +421,34 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#333',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 16,
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 15,
     backgroundColor: '#fff',
+    color: '#333',
   },
   saveButton: {
     backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
   saveButtonText: {
     color: '#fff',

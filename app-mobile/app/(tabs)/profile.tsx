@@ -1,17 +1,41 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useEffect, useState } from 'react';
-import { Link, router } from 'expo-router';
+import { useEffect, useState, useCallback } from 'react';
+import { Link, router, useFocusEffect } from 'expo-router';
 import { useAuthStore } from '../../store/useUserStore';
+import { API_BASE_URL } from '../../services/apiConfig';
+
+// Helper function to fix avatar URLs that point to localhost
+const fixAvatarUrl = (url: string | null): string | null => {
+  if (!url) return null;
+
+  // If it's already a local file URI, return as is
+  if (url.startsWith('file://') || url.startsWith('content://')) {
+    return url;
+  }
+
+  // Replace localhost or 127.0.0.1 with the actual API base URL
+  // This handles cases where the backend returns localhost URLs
+  return url.replace(/^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?/, API_BASE_URL);
+};
 
 export default function ProfileScreen() {
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout, getUserData } = useAuthStore();
   const [profileData, setProfileData] = useState({
     fullName: '',
     email: '',
     phone: '',
     address: '',
   });
+
+  // Refresh user data when screen comes into focus (only when coming back from edit screen)
+  useFocusEffect(
+    useCallback(() => {
+      console.log('Profile Screen: Screen focused');
+      // Don't automatically refresh - only refresh if needed
+      // The edit screen will call getUserData() after successful update
+    }, [])
+  );
 
   useEffect(() => {
     if (user) {
@@ -21,6 +45,7 @@ export default function ProfileScreen() {
         phone: user.phone || '',
         address: user.address || '',
       });
+      console.log('Profile Screen: Updated profile data from user:', user);
     }
   }, [user]);
 
@@ -65,10 +90,10 @@ export default function ProfileScreen() {
       {/* Profile Header */}
       <View style={styles.header}>
         <Image
-          source={{ uri: user?.avatar && user.avatar.trim() !== '' ? user.avatar : 'https://placehold.co/80x80?text=AV' }}
+          source={{ uri: fixAvatarUrl(user?.avatar || null) || 'https://placehold.co/80x80?text=AV' }}
           style={styles.avatar}
           contentFit="cover"
-          cachePolicy="none"
+          cachePolicy="memory"
           onError={(error) => console.log('Avatar image error:', error)}
           onLoad={(success) => console.log('Avatar image loaded successfully:', success)}
         />
