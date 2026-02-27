@@ -1,12 +1,13 @@
 import { Layout, Menu, Avatar, Typography, Row, Col, Card, Divider, Button } from 'antd';
 import { UserOutlined, FileTextOutlined, DollarCircleOutlined, LockOutlined } from '@ant-design/icons';
 import Header from '../../Components/Header/Header';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PersonalInfo from './Components/PersonalInfo/PersonalInfo';
 import ManagerPost from './Components/ManagerPost/ManagerPost';
 import { useStore } from '../../hooks/useStore';
 import RechargeUser from './Components/RechargeUser/RechargeUser';
 import ChangePassword from './Components/ChangePassword/ChangePassword';
+import { useSearchParams } from 'react-router-dom';
 
 import userNotFound from '../../assets/images/img_default.svg';
 
@@ -15,6 +16,7 @@ const { Title, Text } = Typography;
 
 function InfoUser() {
     const [selectedMenu, setSelectedMenu] = useState('personal');
+    const [searchParams] = useSearchParams();
 
     const { dataUser } = useStore();
 
@@ -44,6 +46,14 @@ function InfoUser() {
     const handleMenuClick = (e) => {
         setSelectedMenu(e.key);
     };
+
+    // Tự động chuyển sang tab Nạp tiền khi có payment=success trong URL
+    useEffect(() => {
+        const paymentStatus = searchParams.get('payment');
+        if (paymentStatus === 'success') {
+            setSelectedMenu('recharge');
+        }
+    }, [searchParams]);
 
     return (
         <Layout style={{ minHeight: '100vh', width: '80%', margin: '100px auto' }}>

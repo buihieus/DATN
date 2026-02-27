@@ -230,10 +230,18 @@ const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onApply }) 
         maxArea = undefined;
     }
 
+    // Get selected names for display
+    const selectedProvinceItem = provinces.find(p => p.Code === selectedProvince);
+    const selectedDistrictItem = districts.find(d => d.Code === selectedDistrict);
+    const selectedCategoryItem = categories.find(c => c.id === selectedCategory);
+
     onApply({
       category: selectedCategory,
+      categoryName: selectedCategoryItem?.name || null,
       provinceCode: selectedProvince,
+      provinceName: selectedProvinceItem?.Name || null,
       wardCode: selectedDistrict, // Map district to wardCode for the new system
+      wardName: selectedDistrictItem?.Name || null,
       minPrice,
       maxPrice,
       minArea,

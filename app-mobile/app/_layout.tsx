@@ -66,37 +66,3 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
-// import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-// import { Stack } from 'expo-router';
-// import { StatusBar } from 'expo-status-bar';
-// import { View, Text } from 'react-native';
-// import 'react-native-reanimated';
-// import Toast from 'react-native-toast-message';
-
-// import { useColorScheme } from '@/hooks/use-color-scheme';
-// import SocketProvider from '@/components/SocketProvider';
-// import { useAppStatusManager } from '@/hooks/useAppStatusManager';
-
-// export default function RootLayout() {
-//   const colorScheme = useColorScheme();
-//   useAppStatusManager();
-
-//   return (
-//     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-//       <SocketProvider>
-//         <Stack
-//           screenOptions={{
-//             headerTitleAlign: 'center',
-//           }}
-//         >
-//           {/* chỉ override những screen CẦN override */}
-//           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-//           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-//         </Stack>
-
-//         <StatusBar style="auto" />
-//         <Toast />
-//       </SocketProvider>
-//     </ThemeProvider>
-//   );
-// }

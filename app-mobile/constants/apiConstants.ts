@@ -13,7 +13,8 @@ if (process.env.EXPO_PUBLIC_API_URL) {
   // 2. iOS simulator: localhost (already connects to host machine)
   // 3. Real device: device must be on same network as server
   // This will fall back to http://10.0.2.2:3000 if no environment variables are set
-  API_BASE_URL = 'http://192.168.109.1:3000';
+  // Update: Using 192.168.16.103 as the main LAN IP for real device testing
+  API_BASE_URL = 'http://192.168.16.103:3000';
 }
 
 export { API_BASE_URL };

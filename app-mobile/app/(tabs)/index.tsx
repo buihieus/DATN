@@ -25,8 +25,11 @@ export default function HomeScreen() {
   // State quản lý tất cả filter cùng lúc như web version
   const [activeFilters, setActiveFilters] = useState({
     category: null as string | null,
+    categoryName: null as string | null,
     province: null as string | null,
+    provinceName: null as string | null,
     ward: null as string | null,
+    wardName: null as string | null,
     minPrice: null as number | null,
     maxPrice: null as number | null,
     minArea: null as number | null,
@@ -192,9 +195,12 @@ export default function HomeScreen() {
       // Update active filters with new values from modal
       const updatedFilters = {
         ...activeFilters,
-        category: newFilters.category || activeFilters.category,
-        province: newFilters.provinceCode || activeFilters.province, // Note: modal sends provinceCode
-        ward: newFilters.wardCode || activeFilters.ward, // Note: modal sends wardCode
+        category: newFilters.category || null,
+        categoryName: newFilters.categoryName || null,
+        province: newFilters.provinceCode || activeFilters.province,
+        provinceName: newFilters.provinceName || null,
+        ward: newFilters.wardCode || activeFilters.ward,
+        wardName: newFilters.wardName || null,
         minPrice: newFilters.minPrice !== undefined ? newFilters.minPrice : activeFilters.minPrice,
         maxPrice: newFilters.maxPrice !== undefined ? newFilters.maxPrice : activeFilters.maxPrice,
         minArea: newFilters.minArea !== undefined ? newFilters.minArea : activeFilters.minArea,
@@ -405,18 +411,25 @@ export default function HomeScreen() {
     }
   };
 
-  const clearFilters = () => {
+  const clearFilters = async () => {
     setActiveFilters({
       category: null,
+      categoryName: null,
       province: null,
+      provinceName: null,
       ward: null,
+      wardName: null,
       minPrice: null,
       maxPrice: null,
       minArea: null,
       maxArea: null,
       amenities: [],
     });
-    loadFeaturedRooms(); // Reload to show all featured rooms
+    setIsSearching(false); // Reset searching state to show "Tất cả bài đăng" section
+    await loadFeaturedRooms(); // Reload featured rooms
+    // Also reload all posts to reset the filtered list
+    const allPostsData = await loadAllPosts();
+    setAllPosts(allPostsData);
   };
 
   // Helper function to get category name
@@ -533,7 +546,7 @@ export default function HomeScreen() {
               <View style={styles.activeFilterTags}>
                 {activeFilters.category && (
                   <View style={styles.filterTag}>
-                    <Text style={styles.filterTagText}>{getCategoryName(activeFilters.category)}</Text>
+                    <Text style={styles.filterTagText}>{activeFilters.categoryName || getCategoryName(activeFilters.category)}</Text>
                   </View>
                 )}
                 {(activeFilters.minPrice !== null || activeFilters.maxPrice !== null) && (
@@ -557,12 +570,12 @@ export default function HomeScreen() {
                 )}
                 {activeFilters.province && (
                   <View style={styles.filterTag}>
-                    <Text style={styles.filterTagText}>Tỉnh: {activeFilters.province}</Text>
+                    <Text style={styles.filterTagText}>Tỉnh: {activeFilters.provinceName || activeFilters.province}</Text>
                   </View>
                 )}
                 {activeFilters.ward && (
                   <View style={styles.filterTag}>
-                    <Text style={styles.filterTagText}>Phường: {activeFilters.ward}</Text>
+                    <Text style={styles.filterTagText}>Phường: {activeFilters.wardName || activeFilters.ward}</Text>
                   </View>
                 )}
               </View>
@@ -698,14 +711,6 @@ export default function HomeScreen() {
 
         {/* Rooms Section */}
         <View style={styles.section}>
-          {/* <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              {isSearching ? 'Kết quả tìm kiếm' : 'Bài đăng nổi bật'}
-            </Text>
-            <TouchableOpacity onPress={() => router.push('/favorites')}>
-              <Text style={styles.sectionAction}>Yêu thích</Text>
-            </TouchableOpacity>
-          </View> */}
           {loading ? (
             <Text>Đang tải bài đăng...</Text>
           ) : error ? (

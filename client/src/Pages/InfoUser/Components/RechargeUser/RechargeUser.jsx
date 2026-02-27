@@ -4,6 +4,8 @@ import { Form, Input, Radio, Button, Row, Col, InputNumber, Image, Modal, Result
 import { useState, useEffect } from 'react';
 import { requestGetRechargeUser, requestPayments } from '../../../../config/request';
 import { useStore } from '../../../../hooks/useStore';
+import { useSocket } from '../../../../hooks/useSocket';
+import { useSearchParams } from 'react-router-dom';
 
 import dayjs from 'dayjs';
 
@@ -17,24 +19,58 @@ function RechargeUser() {
     const [paymentData, setPaymentData] = useState(null);
     const [paymentHistory, setPaymentHistory] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [hasShownPaymentSuccess, setHasShownPaymentSuccess] = useState(false);
+    const [searchParams] = useSearchParams();
 
-    const { dataPayment, setDataPayment } = useStore();
+    const { dataPayment: socketPaymentData, setDataPayment } = useStore();
+    const { dataPayment: socketData } = useSocket();
 
     useEffect(() => {
         fetchPaymentHistory();
     }, []);
 
+    // Check for payment success from URL params
     useEffect(() => {
-        if (dataPayment) {
-            setPaymentData(dataPayment);
-            setIsSuccessModalVisible(true);
-            setTimeout(() => {
-                setDataPayment(null);
-            }, 3000);
-            // Refresh payment history after successful payment
-            fetchPaymentHistory();
+        const paymentStatus = searchParams.get('payment');
+        if (paymentStatus === 'success' && !hasShownPaymentSuccess) {
+            const amount = parseFloat(searchParams.get('amount'));
+            const typePayment = searchParams.get('type');
+            if (amount) {
+                setHasShownPaymentSuccess(true);
+                showPaymentSuccess({ amount, typePayment, date: new Date() });
+                // Xóa query params sau khi đã xử lý
+                const newParams = new URLSearchParams(searchParams);
+                newParams.delete('payment');
+                newParams.delete('amount');
+                newParams.delete('type');
+                window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+            }
         }
-    }, [dataPayment]);
+    }, [searchParams]);
+
+    // Listen for real-time payment events from socket
+    useEffect(() => {
+        if (socketData) {
+            showPaymentSuccess(socketData);
+        }
+    }, [socketData]);
+
+    // Handle payment data from store (for backward compatibility)
+    useEffect(() => {
+        if (socketPaymentData) {
+            showPaymentSuccess(socketPaymentData);
+        }
+    }, [socketPaymentData]);
+
+    const showPaymentSuccess = (data) => {
+        setPaymentData(data);
+        setIsSuccessModalVisible(true);
+        setTimeout(() => {
+            setDataPayment(null);
+        }, 3000);
+        // Refresh payment history after successful payment
+        fetchPaymentHistory();
+    };
 
     const fetchPaymentHistory = async () => {
         setLoading(true);

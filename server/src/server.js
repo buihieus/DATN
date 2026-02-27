@@ -14,8 +14,13 @@ cors: {
             'exp://127.0.0.1:19000', // Expo development
             'http://localhost:3000', // Local development
             'http://127.0.0.1:3000', // Local development
-            'http://192.168.48.1:3000', // Mobile app development
-            'http://192.168.48.1:19000', // Mobile app Expo development
+            'http://192.168.16.103:3000', // Mobile app development (updated IP)
+            'http://192.168.16.103:19000', // Mobile app Expo development (updated IP)
+            'http://192.168.48.1:3000', // Mobile app development (old IP - keep for compatibility)
+            'http://192.168.48.1:19000', // Mobile app Expo development (old IP - keep for compatibility)
+            // Allow all local network IPs for development
+            /http:\/\/192\.168\.\d+\.\d+:\d+/, // Match any 192.168.x.x IP
+            /http:\/\/10\.\d+\.\d+\.\d+:\d+/, // Match any 10.x.x.x IP (emulators)
             ...process.env.CLIENT_URL ? [process.env.CLIENT_URL] : [] // Thêm CLIENT_URL nếu có
         ],
         credentials: true
@@ -48,13 +53,22 @@ const corsOptions = {
             'exp://127.0.0.1:19000', // Expo development
             'http://localhost:3000', // Local development
             'http://127.0.0.1:3000', // Local development
-            //
-            'http://192.168.48.1:3000', // Mobile app development
-            'http://192.168.48.1:19000', // Mobile app Expo development
+            'http://192.168.16.103:3000', // Mobile app development (updated IP)
+            'http://192.168.16.103:19000', // Mobile app Expo development (updated IP)
+            'http://192.168.48.1:3000', // Mobile app development (old IP - keep for compatibility)
+            'http://192.168.48.1:19000', // Mobile app Expo development (old IP - keep for compatibility)
+            // Allow all local network IPs for development
+            /http:\/\/192\.168\.\d+\.\d+:\d+/, // Match any 192.168.x.x IP
+            /http:\/\/10\.\d+\.\d+\.\d+:\d+/, // Match any 10.x.x.x IP (emulators)
             ...process.env.CLIENT_URL ? [process.env.CLIENT_URL] : [] // Thêm CLIENT_URL nếu có
         ];
 
-        const isAllowed = allowedOrigins.includes(origin);
+        const isAllowed = allowedOrigins.some(originPattern => {
+            if (originPattern instanceof RegExp) {
+                return originPattern.test(origin);
+            }
+            return originPattern === origin;
+        });
         callback(null, isAllowed);
     },
     credentials: true

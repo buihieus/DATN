@@ -135,88 +135,36 @@ class PaymentsController {
                 const isWebView = userAgent.includes('Mobile') || userAgent.includes('WebView') || userAgent.includes('wv') || userAgent.includes('iPhone') || userAgent.includes('Android');
                 
                 if (isWebView) {
-                    // Gửi một trang HTML đơn giản để thông báo cho WebView biết thanh toán thành công
-                    const successHtml = `
+                    // Gửi tín hiệu đến WebView để đóng và quay về app
+                    const closeHtml = `
                         <!DOCTYPE html>
                         <html>
                         <head>
                             <title>Thanh toán thành công</title>
                             <meta charset="utf-8">
                             <meta name="viewport" content="width=device-width, initial-scale=1">
-                            <style>
-                                body { 
-                                    font-family: Arial, sans-serif; 
-                                    display: flex; 
-                                    justify-content: center; 
-                                    align-items: center; 
-                                    height: 100vh; 
-                                    margin: 0; 
-                                    background-color: #f0f8f0; 
-                                    color: #2e7d32;
-                                }
-                                .container {
-                                    text-align: center;
-                                    padding: 30px;
-                                    border-radius: 10px;
-                                    background-color: white;
-                                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                                }
-                                .success-icon {
-                                    font-size: 60px;
-                                    margin-bottom: 20px;
-                                }
-                            </style>
                         </head>
                         <body>
-                            <div class="container">
-                                <div class="success-icon">✓</div>
-                                <h1>Thanh toán thành công!</h1>
-                                <p>Số tiền: ${processedAmount.toLocaleString('vi-VN')}₫</p>
-                                <p>Vui lòng quay lại ứng dụng...</p>
-                                <p id="timer">3</p>
-                            </div>
                             <script>
-                                // Đếm ngược và gửi tín hiệu đến ứng dụng mobile
-                                let count = 3;
-                                const timerElement = document.getElementById('timer');
-                                
-                                // Gửi tín hiệu đến ứng dụng mobile ngay lập tức
+                                // Gửi tín hiệu thành công đến app ngay lập tức
                                 if (window.ReactNativeWebView) {
                                     window.ReactNativeWebView.postMessage(JSON.stringify({
                                         type: 'PAYMENT_SUCCESS',
                                         amount: ${processedAmount}
                                     }));
-                                } else {
-                                    // Nếu không phải là WebView, gửi tín hiệu qua custom protocol
-                                    try {
-                                        window.location.href = 'myapp://payment-success?amount=${processedAmount}';
-                                    } catch(e) {
-                                        console.log('Could not redirect to app');
-                                    }
                                 }
-                                
-                                const countdown = setInterval(function() {
-                                    count--;
-                                    if (timerElement) timerElement.textContent = count;
-                                    
-                                    if (count <= 0) {
-                                        clearInterval(countdown);
-                                        // Đóng cửa sổ nếu không thể quay lại ứng dụng
-                                        try {
-                                            window.close();
-                                        } catch(e) {
-                                            console.log('Could not close window');
-                                        }
-                                    }
-                                }, 1000);
+                                // Đóng cửa sổ WebView
+                                setTimeout(() => {
+                                    window.close();
+                                }, 500);
                             </script>
                         </body>
                         </html>
                     `;
-                    return res.send(successHtml);
+                    return res.send(closeHtml);
                 } else {
-                    // Nếu từ browser thông thường, redirect về trang cá nhân
-                    return res.redirect(`http://localhost:5173/trang-ca-nhan`);
+                    // Nếu từ browser thông thường, redirect về trang recharge
+                    return res.redirect(`http://localhost:5173/trang-ca-nhan?payment=success&amount=${processedAmount}&type=MOMO`);
                 }
             }
         } else {
@@ -231,90 +179,38 @@ class PaymentsController {
             const isWebView = userAgent.includes('Mobile') || userAgent.includes('WebView') || userAgent.includes('wv') || userAgent.includes('iPhone') || userAgent.includes('Android');
             
             if (isWebView) {
-                // Gửi một trang HTML đơn giản để thông báo cho WebView biết thanh toán thất bại
-                const failureHtml = `
+                // Gửi tín hiệu thất bại đến WebView và đóng ngay
+                const failureCloseHtml = `
                     <!DOCTYPE html>
                     <html>
                     <head>
                         <title>Thanh toán thất bại</title>
                         <meta charset="utf-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1">
-                        <style>
-                            body { 
-                                font-family: Arial, sans-serif; 
-                                display: flex; 
-                                justify-content: center; 
-                                align-items: center; 
-                                height: 100vh; 
-                                margin: 0; 
-                                background-color: #fff8f8; 
-                                color: #c62828;
-                            }
-                            .container {
-                                text-align: center;
-                                padding: 30px;
-                                border-radius: 10px;
-                                background-color: white;
-                                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                            }
-                            .error-icon {
-                                font-size: 60px;
-                                margin-bottom: 20px;
-                            }
-                        </style>
                     </head>
                     <body>
-                        <div class="container">
-                            <div class="error-icon">✕</div>
-                            <h1>Thanh toán thất bại</h1>
-                            <p>Lý do: ${errorMessage}</p>
-                            <p>Vui lòng quay lại ứng dụng...</p>
-                            <p id="timer">3</p>
-                        </div>
                         <script>
-                            // Đếm ngược và gửi tín hiệu đến ứng dụng mobile
-                            let count = 3;
-                            const timerElement = document.getElementById('timer');
-                            
-                            // Gửi tín hiệu đến ứng dụng mobile ngay lập tức
+                            // Gửi tín hiệu thất bại đến app ngay lập tức
                             if (window.ReactNativeWebView) {
                                 window.ReactNativeWebView.postMessage(JSON.stringify({
                                     type: 'PAYMENT_FAILURE',
                                     message: '${errorMessage}'
                                 }));
-                            } else {
-                                // Nếu không phải là WebView, gửi tín hiệu qua custom protocol
-                                try {
-                                    window.location.href = 'myapp://payment-failure?message=${encodeURIComponent(errorMessage)}';
-                                } catch(e) {
-                                    console.log('Could not redirect to app');
-                                }
                             }
-                            
-                            const countdown = setInterval(function() {
-                                count--;
-                                if (timerElement) timerElement.textContent = count;
-                                
-                                if (count <= 0) {
-                                    clearInterval(countdown);
-                                    // Đóng cửa sổ nếu không thể quay lại ứng dụng
-                                    try {
-                                        window.close();
-                                    } catch(e) {
-                                        console.log('Could not close window');
-                                    }
-                                }
-                            }, 1000);
+                            // Đóng cửa sổ WebView
+                            setTimeout(() => {
+                                window.close();
+                            }, 500);
                         </script>
                     </body>
                     </html>
                 `;
-                return res.status(400).send(failureHtml);
+                return res.status(400).send(failureCloseHtml);
             } else {
                 // Nếu từ browser thông thường
-                return res.status(400).json({ 
-                    success: false, 
-                    message: errorMessage 
+                return res.status(400).json({
+                    success: false,
+                    message: errorMessage
                 });
             }
         }
@@ -335,172 +231,77 @@ class PaymentsController {
         
         if (result.success) {
             console.log('Payment successful:', result.amount); // Log thành công
-            
-            // Gửi một trang HTML đơn giản để thông báo cho WebView biết thanh toán thành công
-            const successHtml = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Thanh toán thành công</title>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <style>
-                        body { 
-                            font-family: Arial, sans-serif; 
-                            display: flex; 
-                            justify-content: center; 
-                            align-items: center; 
-                            height: 100vh; 
-                            margin: 0; 
-                            background-color: #f0f8f0; 
-                            color: #2e7d32;
-                        }
-                        .container {
-                            text-align: center;
-                            padding: 30px;
-                            border-radius: 10px;
-                            background-color: white;
-                            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                        }
-                        .success-icon {
-                            font-size: 60px;
-                            margin-bottom: 20px;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="success-icon">✓</div>
-                        <h1>Thanh toán thành công!</h1>
-                        <p>Số tiền: ${result.amount.toLocaleString('vi-VN')}₫</p>
-                        <p>Vui lòng quay lại ứng dụng...</p>
-                        <p id="timer">3</p>
-                    </div>
-                    <script>
-                        // Đếm ngược và gửi tín hiệu đến ứng dụng mobile
-                        let count = 3;
-                        const timerElement = document.getElementById('timer');
-                        
-                        // Gửi tín hiệu đến ứng dụng mobile ngay lập tức
-                        if (window.ReactNativeWebView) {
-                            window.ReactNativeWebView.postMessage(JSON.stringify({
-                                type: 'PAYMENT_SUCCESS',
-                                amount: ${result.amount}
-                            }));
-                        } else {
-                            // Nếu không phải là WebView, gửi tín hiệu qua custom protocol
-                            try {
-                                window.location.href = 'myapp://payment-success?amount=${result.amount}';
-                            } catch(e) {
-                                console.log('Could not redirect to app');
+
+            if (isWebView) {
+                // Gửi tín hiệu đến WebView để đóng và quay về app
+                const closeHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Thanh toán thành công</title>
+                        <meta charset="utf-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1">
+                    </head>
+                    <body>
+                        <script>
+                            // Gửi tín hiệu thành công đến app ngay lập tức
+                            if (window.ReactNativeWebView) {
+                                window.ReactNativeWebView.postMessage(JSON.stringify({
+                                    type: 'PAYMENT_SUCCESS',
+                                    amount: ${result.amount}
+                                }));
                             }
-                        }
-                        
-                        const countdown = setInterval(function() {
-                            count--;
-                            if (timerElement) timerElement.textContent = count;
-                            
-                            if (count <= 0) {
-                                clearInterval(countdown);
-                                // Đóng cửa sổ nếu không thể quay lại ứng dụng
-                                try {
-                                    window.close();
-                                } catch(e) {
-                                    console.log('Could not close window');
-                                }
-                            }
-                        }, 1000);
-                    </script>
-                </body>
-                </html>
-            `;
-            
-            // Trả về HTML cho cả WebView và browser thông thường
-            res.send(successHtml);
+                            // Đóng cửa sổ WebView
+                            setTimeout(() => {
+                                window.close();
+                            }, 500);
+                        </script>
+                    </body>
+                    </html>
+                `;
+                return res.send(closeHtml);
+            } else {
+                // Nếu từ browser thông thường, redirect về trang recharge
+                return res.redirect(`http://localhost:5173/trang-ca-nhan?payment=success&amount=${result.amount}&type=VNPAY`);
+            }
         } else {
             console.log('Payment failed:', result.message); // Log thất bại
-            
-            // Gửi một trang HTML đơn giản để thông báo cho WebView biết thanh toán thất bại
-            const failureHtml = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Thanh toán thất bại</title>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1">
-                    <style>
-                        body { 
-                            font-family: Arial, sans-serif; 
-                            display: flex; 
-                            justify-content: center; 
-                            align-items: center; 
-                            height: 100vh; 
-                            margin: 0; 
-                            background-color: #fff8f8; 
-                            color: #c62828;
-                        }
-                        .container {
-                            text-align: center;
-                            padding: 30px;
-                            border-radius: 10px;
-                            background-color: white;
-                            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-                        }
-                        .error-icon {
-                            font-size: 60px;
-                            margin-bottom: 20px;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="error-icon">✕</div>
-                        <h1>Thanh toán thất bại</h1>
-                        <p>Lý do: ${result.message}</p>
-                        <p>Vui lòng quay lại ứng dụng...</p>
-                        <p id="timer">3</p>
-                    </div>
-                    <script>
-                        // Đếm ngược và gửi tín hiệu đến ứng dụng mobile
-                        let count = 3;
-                        const timerElement = document.getElementById('timer');
-                        
-                        // Gửi tín hiệu đến ứng dụng mobile ngay lập tức
-                        if (window.ReactNativeWebView) {
-                            window.ReactNativeWebView.postMessage(JSON.stringify({
-                                type: 'PAYMENT_FAILURE',
-                                message: '${result.message}'
-                            }));
-                        } else {
-                            // Nếu không phải là WebView, gửi tín hiệu qua custom protocol
-                            try {
-                                window.location.href = 'myapp://payment-failure?message=${encodeURIComponent(result.message)}';
-                            } catch(e) {
-                                console.log('Could not redirect to app');
+
+            if (isWebView) {
+                // Gửi tín hiệu thất bại đến WebView và đóng ngay
+                const failureCloseHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Thanh toán thất bại</title>
+                        <meta charset="utf-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1">
+                    </head>
+                    <body>
+                        <script>
+                            // Gửi tín hiệu thất bại đến app ngay lập tức
+                            if (window.ReactNativeWebView) {
+                                window.ReactNativeWebView.postMessage(JSON.stringify({
+                                    type: 'PAYMENT_FAILURE',
+                                    message: '${result.message}'
+                                }));
                             }
-                        }
-                        
-                        const countdown = setInterval(function() {
-                            count--;
-                            if (timerElement) timerElement.textContent = count;
-                            
-                            if (count <= 0) {
-                                clearInterval(countdown);
-                                // Đóng cửa sổ nếu không thể quay lại ứng dụng
-                                try {
-                                    window.close();
-                                } catch(e) {
-                                    console.log('Could not close window');
-                                }
-                            }
-                        }, 1000);
-                    </script>
-                </body>
-                </html>
-            `;
-            
-            // Trả về HTML cho cả WebView và browser thông thường
-            res.status(400).send(failureHtml);
+                            // Đóng cửa sổ WebView
+                            setTimeout(() => {
+                                window.close();
+                            }, 500);
+                        </script>
+                    </body>
+                    </html>
+                `;
+                return res.status(400).send(failureCloseHtml);
+            } else {
+                // Nếu từ browser thông thường
+                return res.status(400).json({
+                    success: false,
+                    message: result.message
+                });
+            }
         }
     }
 }
