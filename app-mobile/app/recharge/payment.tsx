@@ -1,35 +1,74 @@
-import React from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Button, ActivityIndicator, Alert } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PaymentWebView from '../../components/payment/PaymentWebView';
 import { useAuthStore } from '../../store/useUserStore';
 
 const PaymentScreen = () => {
-  const { paymentUrl } = useLocalSearchParams();
+  const { paymentUrl, amount } = useLocalSearchParams();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSuccess = async () => {
-    alert('Thanh toán thành công!');
-    // Refresh user data to get updated balance
-    try {
-      await useAuthStore.getState().getUserData();
-    } catch (error) {
-      console.error('Error refreshing user data after payment:', error);
-    }
-    // Quay về trang profile sau khi thanh toán thành công
-    // Sử dụng replace để tránh quay lại màn hình thanh toán
-    router.replace('/profile');
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
+    console.log('Payment success callback');
+    
+    // Navigate back to profile first
+    router.back();
+    
+    // Wait for navigation to complete, then refresh data and show alert
+    setTimeout(async () => {
+      router.back();
+      
+      // Wait a bit for profile to load, then refresh and show alert
+      setTimeout(async () => {
+        // Refresh user data to get updated balance
+        try {
+          console.log('Refreshing user data after payment...');
+          await useAuthStore.getState().getUserData();
+          console.log('User data refreshed successfully');
+        } catch (error) {
+          console.error('Error refreshing user data after payment:', error);
+        }
+        
+        // Use the amount from params (user input)
+        const displayAmount = amount ? parseInt(amount as string) : 0;
+        const amountStr = displayAmount > 0 
+          ? `${displayAmount.toLocaleString('vi-VN')}₫` 
+          : 'thành công';
+        
+        // Show success alert on profile screen
+        Alert.alert(
+          '✓ Thành công!',
+          `Nạp tiền ${amountStr} vào tài khoản`,
+          [{ text: 'OK' }]
+        );
+      }, 500);
+    }, 100);
   };
 
   const handleFailure = (error) => {
-    alert('Thanh toán thất bại: ' + error);
-    // Quay lại trang trước đó, sử dụng replace để tránh vòng lặp
-    router.replace('/recharge');
+    console.log('Payment failure callback:', error);
+    Alert.alert(
+      'Thanh toán thất bại',
+      error || 'Có lỗi xảy ra trong quá trình thanh toán',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Go back to recharge screen
+            router.back();
+          }
+        }
+      ]
+    );
   };
 
   const handleCancel = () => {
-    // Quay lại trang trước đó khi hủy, sử dụng replace để tránh vòng lặp
-    router.replace('/recharge');
+    if (isProcessing) return;
+    router.back();
   };
 
   // Giải mã URL nếu đã được encode
@@ -37,22 +76,26 @@ const PaymentScreen = () => {
 
   if (!decodedPaymentUrl) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+        <Stack.Screen options={{
+          headerShown: true,
+          headerTitle: 'Thanh toán',
+        }} />
         <View style={styles.content}>
           <Text>Không có URL thanh toán</Text>
-          <Button title="Quay lại" onPress={() => router.replace('/recharge')} />
+          <Button title="Quay lại" onPress={() => router.back()} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ 
-        headerShown: true, 
+    <View style={styles.container}>
+      <Stack.Screen options={{
+        headerShown: true,
         headerTitle: 'Thanh toán',
         headerRight: () => (
-          <Button title="Hủy" onPress={handleCancel} />
+          <Button title="Hủy" onPress={handleCancel} disabled={isProcessing} />
         ),
       }} />
       <PaymentWebView
@@ -61,14 +104,14 @@ const PaymentScreen = () => {
         onFailure={handleFailure}
         onCancel={handleCancel}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
   },
   content: {
     flex: 1,

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, router, useFocusEffect } from 'expo-router';
 import { useAuthStore } from '../../store/useUserStore';
 import { API_BASE_URL } from '../../services/apiConfig';
+import { Ionicons } from '@expo/vector-icons';
 
 // Helper function to fix avatar URLs that point to localhost
 const fixAvatarUrl = (url: string | null): string | null => {
@@ -45,13 +46,7 @@ export default function ProfileScreen() {
         phone: user.phone || '',
         address: user.address || '',
       });
-      console.log('Profile Screen: Updated profile data from user:', user);
     }
-  }, [user]);
-
-  // Log user data for debugging
-  useEffect(() => {
-    console.log('Profile Screen - Current user data:', user);
   }, [user]);
 
   // Don't render the profile screen if not authenticated
@@ -86,122 +81,146 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Profile Header */}
       <View style={styles.header}>
-        <Image
-          source={{ uri: fixAvatarUrl(user?.avatar || null) || 'https://placehold.co/80x80?text=AV' }}
-          style={styles.avatar}
-          contentFit="cover"
-          cachePolicy="memory"
-          onError={(error) => console.log('Avatar image error:', error)}
-          onLoad={(success) => console.log('Avatar image loaded successfully:', success)}
-        />
-        <Text style={styles.name}>{profileData.fullName || 'Người dùng'}</Text>
+        <View style={styles.avatarContainer}>
+          <Image
+            source={{ uri: fixAvatarUrl(user?.avatar || null) || 'https://placehold.co/80x80?text=AV' }}
+            style={styles.avatar}
+            contentFit="cover"
+            cachePolicy="memory"
+            onError={(error) => console.log('Avatar image error:', error)}
+            onLoad={(success) => console.log('Avatar image loaded successfully:', success)}
+          />
+        </View>
+        <Text style={styles.name}>{profileData.fullName || 'Bạn'}</Text>
         <Text style={styles.email}>{profileData.email}</Text>
+      </View>
 
-        {/* Balance Display */}
-        {/* <View style={styles.balanceContainer}>
-          <Text style={styles.balanceLabel}>Số dư tài khoản</Text>
-          <Text style={styles.balanceValue}>{user?.balance ? user.balance.toLocaleString('vi-VN') : '0'}₫</Text>
-          <TouchableOpacity style={styles.rechargeButton} onPress={handleRecharge}>
+      {/* Balance Card */}
+      <View style={styles.balanceCard}>
+        <View style={styles.balanceRow}>
+          <View>
+            <Text style={styles.balanceLabel}>Số dư tài khoản</Text>
+            <Text style={styles.balanceValue}>{user?.balance ? user.balance.toLocaleString('vi-VN') : '0'}₫</Text>
+          </View>
+          <TouchableOpacity style={styles.rechargeButton} onPress={handleRecharge} activeOpacity={0.7}>
+            <Ionicons name="add-circle" size={20} color="#fff" style={styles.rechargeIcon} />
             <Text style={styles.rechargeButtonText}>Nạp tiền</Text>
           </TouchableOpacity>
-        </View> */}
+        </View>
       </View>
 
       {/* Profile Info Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="person-outline" size={20} color="#007AFF" style={styles.sectionIcon} />
+          <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
+        </View>
+        <View style={styles.divider} />
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Hô và tên</Text>
+          <View style={styles.infoLeft}>
+            <Ionicons name="person-outline" size={18} color="#666" style={styles.infoIcon} />
+            <Text style={styles.infoLabel}>Họ và tên</Text>
+          </View>
           <Text style={styles.infoValue}>{profileData.fullName || 'Chưa cập nhật'}</Text>
         </View>
+        <View style={styles.divider} />
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Email</Text>
+          <View style={styles.infoLeft}>
+            <Ionicons name="mail-outline" size={18} color="#666" style={styles.infoIcon} />
+            <Text style={styles.infoLabel}>Email</Text>
+          </View>
           <Text style={styles.infoValue}>{profileData.email || 'Chưa cập nhật'}</Text>
         </View>
+        <View style={styles.divider} />
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Số điện thoại</Text>
+          <View style={styles.infoLeft}>
+            <Ionicons name="call-outline" size={18} color="#666" style={styles.infoIcon} />
+            <Text style={styles.infoLabel}>Số điện thoại</Text>
+          </View>
           <Text style={styles.infoValue}>{profileData.phone || 'Chưa cập nhật'}</Text>
         </View>
+        <View style={styles.divider} />
         <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Địa chỉ</Text>
+          <View style={styles.infoLeft}>
+            <Ionicons name="location-outline" size={18} color="#666" style={styles.infoIcon} />
+            <Text style={styles.infoLabel}>Địa chỉ</Text>
+          </View>
           <Text style={styles.infoValue}>{profileData.address || 'Chưa cập nhật'}</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.editButton}
           onPress={() => router.push('/profile/edit')}
+          activeOpacity={0.7}
         >
+          <Ionicons name="create-outline" size={18} color="#fff" style={styles.editButtonIcon} />
           <Text style={styles.editButtonText}>Chỉnh sửa hồ sơ</Text>
         </TouchableOpacity>
       </View>
 
       {/* Account Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Cài đặt tài khoản</Text>
-        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/favorites')}>
-          <Text style={styles.settingText}>Mục yêu thích</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/rooms/my-rooms')}>
-          <Text style={styles.settingText}>Phòng đã đăng</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/chat')}>
-          <Text style={styles.settingText}>Tin nhắn</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/rooms/create')}>
-          <Text style={styles.settingText}>Đăng tin mới</Text>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-        
-        {/* Balance Display below Account Settings */}
-        <View style={styles.balanceInfo}>
-          <Text style={styles.balanceInfoLabel}>Số dư</Text>
-          <View style={styles.balanceInfoRow}>
-            <Text style={styles.balanceInfoValue}>{user?.balance ? user.balance.toLocaleString('vi-VN') : '0'}₫</Text>
-            <TouchableOpacity style={styles.rechargeButtonSmall} onPress={handleRecharge}>
-              <Text style={styles.rechargeButtonTextSmall}>Nạp tiền</Text>
-            </TouchableOpacity>
-          </View>
+      <View style={styles.settingsCard}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="settings-outline" size={20} color="#007AFF" style={styles.sectionIcon} />
+          <Text style={styles.cardTitle}>Cài đặt tài khoản</Text>
         </View>
-      </View>
+        <View style={styles.divider} />
 
-      {/* App Settings */}
-      {/* <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Cài đặt ứng dụng</Text>
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>Thông báo</Text>
-          <Text style={styles.chevron}>›</Text>
+        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/favorites')} activeOpacity={0.7}>
+          <View style={styles.settingContent}>
+            <Ionicons name="heart-outline" size={20} color="#FF3B30" style={styles.settingIcon} />
+            <Text style={styles.settingText}>Mục yêu thích</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
         </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>Bảo mật</Text>
-          <Text style={styles.chevron}>›</Text>
+
+        <View style={styles.divider} />
+        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/rooms/my-rooms')} activeOpacity={0.7}>
+          <View style={styles.settingContent}>
+            <Ionicons name="home-outline" size={20} color="#007AFF" style={styles.settingIcon} />
+            <Text style={styles.settingText}>Phòng đã đăng</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
         </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>Ngôn ngữ</Text>
-          <Text style={styles.chevron}>›</Text>
+
+        <View style={styles.divider} />
+        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/(tabs)/chat')} activeOpacity={0.7}>
+          <View style={styles.settingContent}>
+            <Ionicons name="chatbubble-outline" size={20} color="#34C759" style={styles.settingIcon} />
+            <Text style={styles.settingText}>Tin nhắn</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
         </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>Trợ giúp</Text>
-          <Text style={styles.chevron}>›</Text>
+
+        <View style={styles.divider} />
+        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/rooms/create')} activeOpacity={0.7}>
+          <View style={styles.settingContent}>
+            <Ionicons name="add-circle-outline" size={20} color="#FF9500" style={styles.settingIcon} />
+            <Text style={styles.settingText}>Đăng tin mới</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
         </TouchableOpacity>
-      </View> */}
+
+        <View style={styles.divider} />
+        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/recharge/history')} activeOpacity={0.7}>
+          <View style={styles.settingContent}>
+            <Ionicons name="wallet-outline" size={20} color="#5856D6" style={styles.settingIcon} />
+            <Text style={styles.settingText}>Lịch sử nạp tiền</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        </TouchableOpacity>
+      </View>
 
       {/* Logout Button */}
-      <View style={styles.section}>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Đăng xuất</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
+        <Ionicons name="log-out-outline" size={20} color="#FF3B30" style={styles.logoutIcon} />
+        <Text style={styles.logoutText}>Đăng xuất</Text>
+      </TouchableOpacity>
+
+      {/* Bottom Padding */}
+      <View style={styles.bottomPadding} />
     </ScrollView>
   );
 }
@@ -213,156 +232,213 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#fff',
-    padding: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#e8e8e8',
+  },
+  avatarContainer: {
+    marginBottom: 12,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 10,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
   },
   name: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 6,
   },
   email: {
     fontSize: 14,
-    color: '#666',
+    color: '#888',
   },
-  balanceContainer: {
+  balanceCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 15,
     marginTop: 15,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
   },
   balanceLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
+    fontSize: 13,
+    color: '#888',
+    marginBottom: 4,
   },
   balanceValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#007AFF',
-    marginBottom: 10,
   },
   rechargeButton: {
     backgroundColor: '#34C759',
-    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
+    gap: 6,
+  },
+  rechargeIcon: {
+    marginRight: 0,
   },
   rechargeButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontWeight: '600',
+    fontSize: 14,
   },
   section: {
     backgroundColor: '#fff',
-    marginTop: 10,
+    marginTop: 15,
     marginHorizontal: 15,
-    borderRadius: 8,
-    padding: 10,
+    borderRadius: 12,
+    padding: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  sectionIcon: {
+    marginRight: 0,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    paddingHorizontal: 5,
+    fontWeight: '600',
+    color: '#333',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginHorizontal: 16,
   },
   infoItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  infoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 10,
+  },
+  infoIcon: {
+    marginRight: 0,
   },
   infoLabel: {
     fontSize: 14,
     color: '#666',
-    flex: 1,
   },
   infoValue: {
     fontSize: 14,
     fontWeight: '500',
+    color: '#333',
     textAlign: 'right',
-    flex: 1.5,
+  },
+  editButton: {
+    backgroundColor: '#007AFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 10,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    gap: 8,
+  },
+  editButtonIcon: {
+    marginRight: 0,
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  settingsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginHorizontal: 15,
+    marginTop: 15,
+    marginBottom: 15,
+    padding: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
     color: '#333',
   },
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  settingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  settingIcon: {
+    marginRight: 0,
   },
   settingText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#333',
-  },
-  chevron: {
-    fontSize: 20,
-    color: '#ccc',
-  },
-  editButton: {
-    backgroundColor: '#007AFF',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 15,
-    marginHorizontal: 10,
-  },
-  editButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    flex: 1,
   },
   logoutButton: {
-    backgroundColor: '#FF3B30',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#FFF5F5',
+    flexDirection: 'row',
     alignItems: 'center',
-    margin: 10,
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginHorizontal: 15,
+    marginBottom: 20,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#FFD0D0',
+  },
+  logoutIcon: {
+    marginRight: 0,
   },
   logoutText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#FF3B30',
+    fontSize: 15,
+    fontWeight: '600',
   },
-  balanceInfo: {
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  balanceInfoLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
-  },
-  balanceInfoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  balanceInfoValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  rechargeButtonSmall: {
-    backgroundColor: '#34C759',
-    paddingHorizontal: 15,
-    paddingVertical: 6,
-    borderRadius: 15,
-  },
-  rechargeButtonTextSmall: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
+  bottomPadding: {
+    height: 20,
   },
 });

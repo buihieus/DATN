@@ -67,15 +67,30 @@ function ManagerPost() {
 
     const handleDeletePost = async (postId) => {
         try {
+            // Tìm bài đăng để kiểm tra trạng thái và phí
+            const postToDelete = posts.find(post => post._id === postId);
+            const isApproved = postToDelete?.status === 'active';
+            const isRejected = postToDelete?.status === 'cancel';
+            const feeAmount = postToDelete?.fee || 0;
+            
             const data = {
                 id: postId,
             };
             const res = await requestDeletePost(data);
-            message.success(res.message);
+            
+            // Hiển thị thông báo phù hợp
+            if (isApproved) {
+                message.success('Bài viết đã được xóa. Không hoàn tiền (bài đã duyệt).');
+            } else if (isRejected) {
+                message.success(`Bài viết bị từ chối đã được xóa. ${feeAmount.toLocaleString('vi-VN')}₫ đã được hoàn vào số dư.`);
+            } else {
+                message.success(`Bài viết chưa duyệt đã được xóa. ${feeAmount.toLocaleString('vi-VN')}₫ đã được hoàn vào số dư.`);
+            }
+            
             fetchPosts();
             fetchAuth();
         } catch (error) {
-            message.error(error.response.data.message);
+            message.error(error.response?.data?.message || 'Có lỗi xảy ra khi xóa bài viết');
         }
     };
 
@@ -260,9 +275,24 @@ function ManagerPost() {
                         title="Gia hạn bài viết"
                     />
                     <Popconfirm
-                        title="Bạn chắc chắn muốn xóa?"
+                        title={() => {
+                            const postToDelete = posts.find(post => post._id === record._id);
+                            const isApproved = postToDelete?.status === 'active';
+                            const isRejected = postToDelete?.status === 'cancel';
+                            const feeAmount = postToDelete?.fee || 0;
+                            if (isApproved) {
+                                return 'Xóa bài viết đã duyệt (không hoàn tiền)?';
+                            } else if (isRejected) {
+                                return `Xóa bài viết bị từ chối? Bạn sẽ được hoàn ${feeAmount.toLocaleString('vi-VN')}₫`;
+                            } else {
+                                return `Xóa bài viết chưa duyệt? Bạn sẽ được hoàn ${feeAmount.toLocaleString('vi-VN')}₫`;
+                            }
+                        }}
                         onConfirm={() => handleDeletePost(record._id)}
-                        okText="Xóa"
+                        okText={() => {
+                            const postToDelete = posts.find(post => post._id === record._id);
+                            return postToDelete?.status === 'active' ? 'Xóa (không hoàn tiền)' : 'Xóa và hoàn tiền';
+                        }}
                         cancelText="Hủy"
                     >
                         <Button

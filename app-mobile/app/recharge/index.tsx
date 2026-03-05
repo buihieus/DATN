@@ -102,10 +102,13 @@ export default function RechargeScreen() {
       }
 
       if (paymentUrl) {
-        // Navigate to payment webview
+        // Navigate to payment webview with amount
         router.push({
           pathname: '/recharge/payment',
-          params: { paymentUrl: encodeURIComponent(paymentUrl) }
+          params: { 
+            paymentUrl: encodeURIComponent(paymentUrl),
+            amount: numericAmount.toString() // Pass the amount to display later
+          }
         });
       } else {
         Alert.alert('Lỗi', 'Không nhận được URL thanh toán từ hệ thống');

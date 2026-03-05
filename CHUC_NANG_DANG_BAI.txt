@@ -1,0 +1,438 @@
+================================================================================
+                    CHỨC NĂNG ĐĂNG BÀI - HỆ THỐNG PHÒNG TRỌ
+================================================================================
+
+I. TỔNG QUAN CHỨC NĂNG
+----------------------
+Hệ thống đăng bài cho phép người dùng đăng tin cho thuê phòng trọ, nhà nguyên căn,
+căn hộ chung cư, căn hộ mini, và ở ghép. Bài đăng cần được admin duyệt trước khi
+hiển thị công khai.
+
+II. LUỒNG XỬ LÝ ĐĂNG BÀI (CREATE POST)
+--------------------------------------
+
+1. Dữ liệu đầu vào (Request Body):
+   - title: Tiêu đề bài đăng (bắt buộc)
+   - description: Mô tả chi tiết (bắt buộc)
+   - price: Giá thuê/tháng (bắt buộc)
+   - images: Mảng URL hình ảnh (bắt buộc, ít nhất 1 ảnh)
+   - category: Loại bài ('phong-tro', 'nha-nguyen-can', 'can-ho-chung-cu', 'can-ho-mini', 'o-ghep')
+   - area: Diện tích (m²) (bắt buộc)
+   - username: Tên người liên hệ (bắt buộc)
+   - phone: Số điện thoại (bắt buộc)
+   - options: Mảng tiện nghi (bắt buộc)
+   - address: Object địa chỉ (bắt buộc)
+     + provinceCode: Mã tỉnh/thành phố
+     + wardCode: Mã phường/xã
+     + street: Số nhà và tên đường
+     + fullAddress: Địa chỉ đầy đủ (chuỗi)
+   - endDate: Ngày hết hạn (bắt buộc)
+   - typeNews: Loại tin ('vip' hoặc 'normal', mặc định 'normal')
+   - dateEnd: Số ngày đăng (3, 7, hoặc 30) (bắt buộc)
+
+2. Quy trình xử lý:
+   a. Validate dữ liệu đầu vào
+   b. Kiểm tra user tồn tại
+   c. Tính phí đăng bài theo bảng giá:
+      - 3 ngày: 30,000 VNĐ
+      - 7 ngày: 70,000 VNĐ
+      - 30 ngày: 300,000 VNĐ
+   d. Kiểm tra số dư user (balance)
+   e. Trừ tiền trong tài khoản user
+   f. Tạo bài đăng với status = 'inactive' (chờ duyệt)
+   g. Lưu phí (fee) và số ngày (feeDuration) để hoàn tiền khi cần
+   h. Lên lịch re-index RAG system (debounced 5 giây)
+
+3. API Endpoint:
+   POST /api/create-post
+   Header: Authorization (JWT token)
+   Body: { ...dữ liệu như trên... }
+
+4. Phản hồi thành công:
+   {
+     "statusCode": 201,
+     "message": "Post created successfully",
+     "metadata": { ...postData... }
+   }
+
+III. THANH TOÁN VÀ TRỪ TIỀN
+---------------------------
+
+1. Bảng giá đăng bài (áp dụng cho cả tin vip và normal):
+   ┌─────────────┬──────────────┐
+   │ Số ngày     │ Giá (VNĐ)    │
+   ├─────────────┼──────────────┤
+   │ 3 ngày      │ 30,000       │
+   │ 7 ngày      │ 70,000       │
+   │ 30 ngày     │ 300,000      │
+   └─────────────┴──────────────┘
+
+2. Cơ chế trừ tiền:
+   - Khi tạo bài đăng thành công, hệ thống tự động trừ số tiền tương ứng
+   - Số dư được lưu trong trường 'balance' của user document
+   - Công thức: user.balance = user.balance - fee
+   - Phí được lưu trong post.fee để hoàn tiền khi xóa bài chưa duyệt
+
+3. Kiểm tra số dư:
+   if (user.balance < pricePost.price) {
+       throw new BadRequestError('Số dư không đủ');
+   }
+
+IV. DUYỆT BÀI (APPROVE POST)
+----------------------------
+
+1. Admin duyệt bài:
+   API: POST /api/approve-post
+   Header: Authorization (JWT token - admin)
+   Body: { id: "postId" }
+
+2. Quy trình duyệt:
+   a. Kiểm tra bài đăng tồn tại
+   b. Gửi email thông báo cho user (nếu không phải admin post)
+   c. Kiểm tra ngày hết hạn:
+      - Nếu còn hạn: status = 'active'
+      - Nếu đã hết hạn: status = 'expired'
+   d. Trigger re-index RAG system
+
+3. Email thông báo:
+   - Sử dụng SendMailApprove utility
+   - Gửi đến email của user
+   - Nội dung: Thông tin bài đăng đã được duyệt
+
+V. TỪ CHỐI BÀI (REJECT POST)
+----------------------------
+
+1. Admin từ chối:
+   API: POST /api/reject-post
+   Header: Authorization (JWT token - admin)
+   Body: { id: "postId", reason: "Lý do từ chối" }
+
+2. Quy trình từ chối:
+   a. Kiểm tra bài đăng tồn tại
+   b. Gửi email thông báo lý do từ chối (nếu không phải admin post)
+   c. Cập nhật status = 'cancel'
+   d. User có thể xóa bài và được hoàn tiền
+
+3. Email thông báo:
+   - Sử dụng SendMailReject utility
+   - Gửi đến email của user
+   - Nội dung: Lý do bài đăng bị từ chối
+
+VI. XÓA BÀI (DELETE POST)
+-------------------------
+
+1. API Endpoint:
+   POST /api/delete-post
+   Header: Authorization (JWT token)
+   Body: { id: "postId", deletedBy: "user" | "admin" }
+
+2. Các trường hợp xóa:
+
+   a. USER XÓA BÀI:
+      - Kiểm tra quyền sở hữu (userId phải khớp)
+      - Kiểm tra status:
+        + Nếu status = 'inactive' hoặc 'cancel': HOÀN TIỀN
+        + Nếu status = 'active': KHÔNG hoàn tiền
+      - Hoàn tiền: user.balance = user.balance + post.fee
+      - Xóa bài và xóa khỏi favorites
+
+   b. ADMIN XÓA BÀI:
+      - Không kiểm tra quyền sở hữu
+      - KHÔNG hoàn tiền trong mọi trường hợp
+      - Xóa bài và xóa khỏi favorites
+
+3. Quy trình xóa chi tiết:
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ 1. Tìm bài đăng theo ID                                        │
+   │ 2. Nếu deletedBy = 'admin':                                    │
+   │    → Xóa bài ngay (không hoàn tiền)                            │
+   │    → Xóa khỏi favorites                                        │
+   │    → Re-index RAG system                                       │
+   │ 3. Nếu deletedBy = 'user':                                     │
+   │    → Kiểm tra userId === current userId                        │
+   │    → Nếu status = 'inactive' hoặc 'cancel' và có fee:          │
+   │      * Hoàn tiền: balance += fee                               │
+   │      * Log: "Hoàn tiền X VNĐ cho user Y khi xóa bài Z"         │
+   │    → Xóa bài                                                   │
+   │    → Xóa khỏi favorites                                        │
+   │    → Re-index RAG system                                       │
+   └─────────────────────────────────────────────────────────────────┘
+
+4. Phản hồi thành công:
+   {
+     "statusCode": 200,
+     "message": "Xoá bài viết thành công",
+     "metadata": { ...deletedPostData... }
+   }
+
+VII. CẬP NHẬT BÀI (UPDATE POST)
+-------------------------------
+
+1. API Endpoint:
+   PUT /api/update-post/:id
+   Header: Authorization (JWT token)
+   Body: { ...dữ liệu cần cập nhật... }
+
+2. Cập nhật thông thường:
+   - Cập nhật các trường: title, description, price, images, category, area,
+     username, phone, options, location, typeNews
+   - Set status = 'inactive' (yêu cầu duyệt lại)
+   - Giữ nguyên endDate nếu không cung cấp mới
+
+3. Gia hạn bài đăng (kèm thanh toán):
+   - Kiểm tra quyền sở hữu
+   - Kiểm tra status !== 'cancel'
+   - Chọn gói gia hạn (3, 7, hoặc 30 ngày)
+   - Tính phí theo bảng giá
+   - Kiểm tra và trừ số dư user
+   - Tính ngày hết hạn mới:
+     + Nếu bài còn hạn: startDate = endDate hiện tại
+     + Nếu bài đã hết: startDate = ngày hiện tại
+     + newEndDate = startDate + số ngày gia hạn
+   - Cập nhật endDate mới
+   - Set status = 'inactive' (yêu cầu duyệt lại)
+
+VIII. CÁC TRẠNG THÁI BÀI ĐĂNG (STATUS)
+--------------------------------------
+
+1. 'inactive': 
+   - Bài mới tạo, chờ admin duyệt
+   - Bài được cập nhật, chờ duyệt lại
+   - Bài được gia hạn, chờ duyệt lại
+
+2. 'active':
+   - Bài đã được admin duyệt
+   - Hiển thị công khai cho người dùng
+   - Còn hạn sử dụng
+
+3. 'cancel':
+   - Bài bị admin từ chối
+   - User có thể xóa và được hoàn tiền
+
+4. 'expired':
+   - Bài đã hết hạn sử dụng
+   - Tự động chuyển sang trạng thái này khi qua endDate
+
+IX. DỮ LIỆU ĐƯỢC TRUYỀN NHƯ THẾ NÀO
+-----------------------------------
+
+1. CLIENT → SERVER (Request):
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ HTTP Request (POST/GET/PUT/DELETE)                             │
+   │                                                                 │
+   │ Headers:                                                        │
+   │   - Authorization: Bearer <JWT_TOKEN>                          │
+   │   - Content-Type: application/json                             │
+   │                                                                 │
+   │ Body (JSON):                                                    │
+   │   {                                                             │
+   │     "title": "Phòng trọ cao cấp",                              │
+   │     "price": 5000000,                                          │
+   │     "description": "Mô tả chi tiết...",                        │
+   │     "images": ["url1", "url2"],                                │
+   │     "category": "phong-tro",                                   │
+   │     "area": 25,                                                │
+   │     "username": "Nguyễn Văn A",                               │
+   │     "phone": "0901234567",                                     │
+   │     "options": ["Có máy lạnh", "Có gác"],                     │
+   │     "address": {                                               │
+   │       "provinceCode": "01",                                    │
+   │       "wardCode": "00001",                                     │
+   │       "street": "123 Đường ABC",                               │
+   │       "fullAddress": "123 Đường ABC, Phường X, Quận Y, Hà Nội"│
+   │     },                                                         │
+   │     "endDate": "2026-04-01T00:00:00.000Z",                     │
+   │     "typeNews": "normal",                                      │
+   │     "dateEnd": 30                                              │
+   │   }                                                             │
+   └─────────────────────────────────────────────────────────────────┘
+
+2. SERVER → DATABASE (Mongoose):
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ modelPost.create({ ...data... })                               │
+   │                                                                 │
+   │ MongoDB Document:                                               │
+   │   {                                                             │
+   │     "_id": "ObjectId(...)",                                    │
+   │     "title": "Phòng trọ cao cấp",                              │
+   │     "price": 5000000,                                          │
+   │     "description": "Mô tả chi tiết...",                        │
+   │     "images": ["url1", "url2"],                                │
+   │     "userId": "user123",                                       │
+   │     "category": "phong-tro",                                   │
+   │     "address": { ... },                                        │
+   │     "phone": "0901234567",                                     │
+   │     "username": "Nguyễn Văn A",                               │
+   │     "area": 25,                                                │
+   │     "options": ["Có máy lạnh", "Có gác"],                     │
+   │     "status": "inactive",                                      │
+   │     "typeNews": "normal",                                      │
+   │     "fee": 300000,         // Phí đã trả                       │
+   │     "feeDuration": 30,      // Số ngày đã mua                  │
+   │     "endDate": ISODate("2026-04-01"),                         │
+   │     "createdAt": ISODate("2026-03-01"),                       │
+   │     "updatedAt": ISODate("2026-03-01")                        │
+   │   }                                                             │
+   └─────────────────────────────────────────────────────────────────┘
+
+3. SERVER → CLIENT (Response):
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ HTTP Response (JSON)                                            │
+   │                                                                 │
+   │ {                                                               │
+   │   "statusCode": 201,                                            │
+   │   "message": "Post created successfully",                      │
+   │   "metadata": {                                                 │
+   │     "post": { ...postData... },                                │
+   │     "user": { ...userData... }                                 │
+   │   }                                                             │
+   │ }                                                               │
+   └─────────────────────────────────────────────────────────────────┘
+
+4. USER → PAYMENT GATEWAY (MoMo/VNPAY):
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ Nạp tiền vào tài khoản:                                         │
+   │                                                                 │
+   │ 1. Client gọi API: POST /api/payments                          │
+   │    Body: { "typePayment": "VNPAY", "amountUser": 500000 }      │
+   │                                                                 │
+   │ 2. Server tạo payment URL và trả về client                     │
+   │                                                                 │
+   │ 3. Client redirect đến cổng thanh toán                         │
+   │                                                                 │
+   │ 4. Payment gateway callback: /api/check-payment-vnpay          │
+   │    - Cập nhật balance: user.balance += amount                  │
+   │    - Tạo recharge record                                       │
+   │    - Emit socket event 'new-payment'                           │
+   │                                                                 │
+   │ 5. Client nhận thông báo và cập nhật UI                        │
+   └─────────────────────────────────────────────────────────────────┘
+
+X. SƠ ĐỒ LUỒNG DỮ LIỆU TỔNG QUÁT
+--------------------------------
+
+    ┌─────────────┐
+    │    USER     │
+    └──────┬──────┘
+           │
+           │ 1. Tạo bài đăng (POST /api/create-post)
+           │    - Gửi dữ liệu bài đăng
+           │    - Kèm JWT token
+           ▼
+    ┌─────────────────────────────────────────┐
+    │           SERVER (Node.js/Express)      │
+    │                                         │
+    │  - Xác thực token (authUser middleware)│
+    │  - Validate dữ liệu                     │
+    │  - Kiểm tra số dư                       │
+    │  - Trừ tiền (user.balance -= fee)       │
+    │  - Tạo post (status = 'inactive')       │
+    │  - Lưu fee để hoàn tiền                 │
+    └──────────────┬──────────────────────────┘
+                   │
+                   │ 2. Lưu vào Database
+                   ▼
+    ┌─────────────────────────────────────────┐
+    │         DATABASE (MongoDB)              │
+    │                                         │
+    │  - Collection: posts                    │
+    │  - Document mới được tạo                │
+    │  - User document được cập nhật balance  │
+    └──────────────┬──────────────────────────┘
+                   │
+                   │ 3. Admin duyệt bài (POST /api/approve-post)
+                   ▼
+    ┌─────────────────────────────────────────┐
+    │           SERVER (Admin Action)         │
+    │                                         │
+    │  - Xác thực admin token                │
+    │  - Gửi email thông báo                  │
+    │  - Cập nhật status = 'active'           │
+    │  - Trigger re-index RAG                 │
+    └──────────────┬──────────────────────────┘
+                   │
+                   │ 4. Cập nhật Database
+                   ▼
+    ┌─────────────────────────────────────────┐
+    │         DATABASE (MongoDB)              │
+    │                                         │
+    │  - Post status: 'inactive' → 'active'   │
+    │  - Bài đăng hiển thị công khai          │
+    └──────────────┬──────────────────────────┘
+                   │
+                   │ 5. Xóa bài (POST /api/delete-post)
+                   ▼
+    ┌─────────────────────────────────────────┐
+    │           SERVER (Delete Action)        │
+    │                                         │
+    │  - Kiểm tra deletedBy (user/admin)      │
+    │  - Nếu user xóa & status != 'active':   │
+    │    * Hoàn tiền (balance += fee)         │
+    │  - Nếu admin xóa: Không hoàn tiền       │
+    │  - Xóa post và favorites                │
+    │  - Trigger re-index RAG                 │
+    └──────────────┬──────────────────────────┘
+                   │
+                   │ 6. Xóa khỏi Database
+                   ▼
+    ┌─────────────────────────────────────────┐
+    │         DATABASE (MongoDB)              │
+    │                                         │
+    │  - Xóa document post                    │
+    │  - Xóa documents trong favorites        │
+    │  - User balance được cập nhật (nếu hoàn │
+    │    tiền)                                │
+    └─────────────────────────────────────────┘
+
+XI. BẢNG TÓM TẮT CÁC API ENDPOINTS
+----------------------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Method │ Endpoint                  │ Auth     │ Mô tả                      │
+├────────┼───────────────────────────┼──────────┼────────────────────────────┤
+│ POST   │ /api/create-post          │ User     │ Tạo bài đăng mới (trừ tiền)│
+│ POST   │ /api/create-post-by-admin │ Admin    │ Admin tạo bài (không trừ)  │
+│ GET    │ /api/get-posts            │ Public   │ Lấy danh sách bài (lọc)    │
+│ GET    │ /api/get-post-by-id       │ Public   │ Lấy chi tiết 1 bài         │
+│ GET    │ /api/get-post-by-user-id  │ User     │ Lấy bài của user hiện tại  │
+│ GET    │ /api/get-all-posts        │ Admin    │ Admin xem tất cả bài       │
+│ POST   │ /api/approve-post         │ Admin    │ Duyệt bài                  │
+│ POST   │ /api/reject-post          │ Admin    │ Từ chối bài                │
+│ POST   │ /api/delete-post          │ User/Admin│ Xóa bài (hoàn tiền nếu có)│
+│ PUT    │ /api/update-post/:id      │ User     │ Cập nhật bài (gia hạn)     │
+│ POST   │ /api/payments             │ User     │ Nạp tiền (MoMo/VNPAY)      │
+│ GET    │ /api/check-payment-momo   │ Public   │ Callback MoMo              │
+│ GET    │ /api/check-payment-vnpay  │ Public   │ Callback VNPAY             │
+└────────┴───────────────────────────┴──────────┴────────────────────────────┘
+
+XII. LƯU Ý QUAN TRỌNG
+---------------------
+
+1. Hoàn tiền:
+   - Chỉ hoàn khi user xóa bài có status = 'inactive' hoặc 'cancel'
+   - Bài đã duyệt (status = 'active') KHÔNG được hoàn tiền
+   - Admin xóa bài KHÔNG hoàn tiền
+
+2. Phí đăng bài:
+   - Được lưu trong post.fee khi tạo bài
+   - Dùng để tính toán khi hoàn tiền
+   - Áp dụng chung cho tin vip và normal
+
+3. Hạn sử dụng:
+   - Tính từ ngày admin duyệt (với bài mới)
+   - Tính từ ngày hết hạn cũ + số ngày gia hạn (với bài gia hạn)
+   - Bài hết hạn tự động chuyển status = 'expired'
+
+4. Re-index RAG:
+   - Tự động trigger khi tạo, xóa, duyệt bài
+   - Sử dụng debounced function (chờ 5 giây) để batch operations
+   - Giúp chatbot AI có dữ liệu cập nhật
+
+5. Validation:
+   - Kiểm tra đầy đủ các trường bắt buộc
+   - Kiểm tra số dư trước khi tạo bài
+   - Kiểm tra quyền sở hữu khi xóa/cập nhật
+
+================================================================================
+                              KẾT THÚC TÀI LIỆU
+================================================================================

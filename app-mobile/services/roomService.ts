@@ -32,6 +32,8 @@ export interface Post {
   userId: string;
   endDate: string;
   typeNews: string; // 'normal' or 'vip'
+  fee?: number; // Phí đăng bài (dùng để hoàn tiền khi xóa)
+  feeDuration?: number; // Số ngày của gói đăng (3, 7, 30)
   createdAt: string;
   updatedAt: string;
   user?: {

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, FlatList, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router';
 import ChatBubble from '../../components/ChatBubble';
@@ -156,7 +156,11 @@ export default function ChatDetailScreen() {
           headerRight: () => conversationUserId ? <StatusDisplay userId={conversationUserId} /> : null,
         }}
       />
-      <View style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
+      >
         <View style={styles.messagesContainer}>
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -166,13 +170,15 @@ export default function ChatDetailScreen() {
           <>
             <FlatList
               ref={flatListRef}
-              data={sortedMessages} // Chronological order (oldest first, newest last)
+              data={sortedMessages}
               renderItem={renderMessage}
-              keyExtractor={item => item._id || `msg-${Date.now()}-${Math.random()}`} // Ensure unique key
+              keyExtractor={item => item._id || `msg-${Date.now()}-${Math.random()}`}
               style={styles.list}
               contentContainerStyle={styles.listContent}
               onScroll={handleScroll}
               scrollEventThrottle={16}
+              keyboardDismissMode="on-drag"
+              keyboardShouldPersistTaps="handled"
             />
             {showScrollToBottom && (
               <TouchableOpacity style={styles.scrollToBottomButton} onPress={scrollToBottom}>
@@ -190,7 +196,7 @@ export default function ChatDetailScreen() {
         }
       </View>
       <ChatInput onSend={handleSendMessage} />
-    </View>
+    </KeyboardAvoidingView>
     </>
   );
 }
@@ -241,7 +247,7 @@ const styles = StyleSheet.create({
   },
   scrollToBottomButton: {
     position: 'absolute',
-    bottom: 80, // Above the input field
+    bottom: 80,
     right: 20,
     backgroundColor: 'white',
     borderRadius: 20,

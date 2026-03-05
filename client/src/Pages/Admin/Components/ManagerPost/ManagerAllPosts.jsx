@@ -223,10 +223,16 @@ function ManagerAllPosts() {
 
     const handleDeletePost = async (postId) => {
         try {
-            await requestDeletePost({ id: postId });
+            // Tìm bài đăng để kiểm tra trạng thái và phí
+            const postToDelete = posts.find(post => post._id === postId);
+            const isApproved = postToDelete?.status === 'active';
+            const feeAmount = postToDelete?.fee || 0;
+            
+            // Truyền deletedBy: 'admin' để backend không hoàn tiền
+            await requestDeletePost({ id: postId, deletedBy: 'admin' });
+            
             // Optimistic update: Remove the post from the UI immediately
             setPosts(prevPosts => {
-                const postToDelete = prevPosts.find(post => post._id === postId);
                 const updatedPosts = prevPosts.filter(post => post._id !== postId);
 
                 // Update stats based on the deleted post
@@ -252,7 +258,13 @@ function ManagerAllPosts() {
 
                 return updatedPosts;
             });
-            message.success('Xóa bài viết thành công');
+            
+            // Hiển thị thông báo phù hợp
+            if (isApproved) {
+                message.success('Bài viết đã được xóa.');
+            } else {
+                message.success(`Bài viết đã được xóa (không hoàn tiền).`);
+            }
         } catch (error) {
             console.error('Error deleting post:', error);
             fetchData(); // Re-fetch to get the correct state if API call fails
@@ -570,9 +582,9 @@ function ManagerAllPosts() {
                     />
                     <Popconfirm
                         title="Xác nhận xóa bài viết?"
-                        description="Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác."
+                        description="Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác. Admin xóa sẽ không hoàn tiền cho người dùng."
                         onConfirm={() => handleDeletePost(record._id)}
-                        okText="Xóa"
+                        okText="Xóa (không hoàn tiền)"
                         cancelText="Hủy"
                     >
                         <Button

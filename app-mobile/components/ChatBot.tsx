@@ -4,12 +4,42 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useChatBot } from '../hooks/useChatBot';
 import { ChatbotMessage } from '@/services/chatbotService';
+import { API_BASE_URL } from '@/services/apiConfig';
 // import { ChatbotMessage } from '../../services/chatbotService';
 
 interface ChatBotProps {
   visible: boolean;
   onClose: () => void;
 }
+
+// Function to process image URLs and replace localhost references
+const processImageUrl = (url: string | undefined): string => {
+  if (!url) return 'https://placehold.co/300x200';
+
+  // Check if it's a Base64 string (starts with data:image/)
+  if (url.startsWith('data:image/')) {
+    return url; // Return as-is for Base64 images
+  }
+
+  // If it's already a full URL, replace localhost references
+  if (url.startsWith('http')) {
+    // Extract just the host:port part from API_BASE_URL (without protocol)
+    const apiUrlNoProtocol = API_BASE_URL.replace(/^https?:\/\//, '');
+    const apiProtocol = API_BASE_URL.startsWith('https') ? 'https' : 'http';
+
+    return url
+      .replace(/^http:\/\/localhost(:\d+)?/, `${apiProtocol}://${apiUrlNoProtocol}`)
+      .replace(/^http:\/\/127\.0\.0\.1(:\d+)?/, `${apiProtocol}://${apiUrlNoProtocol}`)
+      .replace(/^http:\/\/10\.0\.2\.2(:\d+)?/, `${apiProtocol}://${apiUrlNoProtocol}`)
+      .replace(/^https:\/\/localhost(:\d+)?/, `${apiProtocol}://${apiUrlNoProtocol}`)
+      .replace(/^https:\/\/127\.0\.0\.1(:\d+)?/, `${apiProtocol}://${apiUrlNoProtocol}`)
+      .replace(/^https:\/\/10\.0\.2\.2(:\d+)?/, `${apiProtocol}://${apiUrlNoProtocol}`);
+  }
+
+  // If it's a relative path, construct the full URL
+  const normalizedUrl = url.startsWith('/') ? url.substring(1) : url;
+  return `${API_BASE_URL}/${normalizedUrl}`;
+};
 
 const ChatBot: React.FC<ChatBotProps> = ({ visible, onClose }) => {
   const { messages, isLoading, error, sendUserMessage, clearMessages } = useChatBot();
@@ -29,13 +59,18 @@ const ChatBot: React.FC<ChatBotProps> = ({ visible, onClose }) => {
   if (!visible) return null;
 
   const handleSend = async () => {
-    if (inputText.trim() === '') return;
+    const message = inputText.trim();
+    if (message === '') return;
+
+    // Clear input immediately
+    setInputText('');
 
     try {
-      await sendUserMessage(inputText);
-      setInputText('');
+      await sendUserMessage(message);
     } catch (err) {
       Alert.alert('Lỗi', 'Không thể gửi tin nhắn. Vui lòng thử lại.');
+      // Restore the message if sending failed
+      setInputText(message);
     }
   };
 
@@ -44,70 +79,82 @@ const ChatBot: React.FC<ChatBotProps> = ({ visible, onClose }) => {
 
     // Handle room recommendation responses (similar to web version)
     if (typeof item.content !== 'string' && item.content.type === 'show_rooms' && item.content.rooms) {
+      console.log('=== ROOMS DATA ===');
+      console.log('Number of rooms:', item.content.rooms.length);
+      console.log('First room:', JSON.stringify(item.content.rooms[0], null, 2));
+      console.log('First room images:', item.content.rooms[0]?.images);
+      console.log('First room title:', item.content.rooms[0]?.title);
+      console.log('First room price:', item.content.rooms[0]?.price);
+      console.log('First room location:', item.content.rooms[0]?.location);
+
       return (
-        <View style={[styles.messageContainer, styles.botMessage]}>
-          <View style={[styles.messageBubble, styles.botBubble]}>
+        <View style={styles.messageContainer}>
+          <View style={styles.botBubbleWithRooms}>
             {/* Display the message text */}
             {item.content.message && item.content.message.trim() !== '' && (
-              <Text style={[styles.messageText, styles.botText]}>{item.content.message}</Text>
+              <Text style={styles.botText}>{item.content.message}</Text>
             )}
 
-            {/* Render room recommendations grid */}
-            <View style={styles.roomRecommendationsContainer}>
-              <FlatList
-                data={item.content.rooms}
-                horizontal={false}
-                numColumns={1}
-                keyExtractor={(room) => room._id}
-                renderItem={({ item: room }) => (
-                  <TouchableOpacity
-                    style={styles.roomRecommendationItem}
-                    onPress={() => router.push(`/rooms/${room._id}`)}
-                  >
+            {/* Render room recommendations list */}
+            {item.content.rooms.map((room, index) => {
+              console.log(`Room ${index} (${room._id}):`);
+              console.log('  - images:', room.images);
+              console.log('  - title:', room.title);
+              console.log('  - price:', room.price);
+              console.log('  - location:', room.location);
+              console.log('  - area:', room.area);
+              
+              return (
+                <TouchableOpacity
+                  key={room._id}
+                  style={styles.roomRecommendationItem}
+                  onPress={() => router.push(`/rooms/${room._id}`)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.roomContent}>
                     <View style={styles.roomImageContainer}>
                       {room.images && room.images.length > 0 ? (
                         <Image
-                          source={{ uri: room.images[0] }}
+                          source={{ uri: processImageUrl(room.images[0]) }}
                           style={styles.roomImage}
                           resizeMode="cover"
-                          onError={() => console.log('Failed to load image:', room.images[0])}
+                          onError={(e) => {
+                            console.log('❌ Image load error:', room.images[0]);
+                            console.log('Processed URL:', processImageUrl(room.images[0]));
+                          }}
+                          onLoad={() => console.log('✅ Image loaded:', processImageUrl(room.images[0]))}
                         />
                       ) : (
                         <View style={styles.noImagePlaceholder}>
-                          <Text style={styles.noImageText}>No Image</Text>
+                          <Text style={styles.noImageText}>Không có ảnh</Text>
                         </View>
                       )}
                     </View>
 
                     <View style={styles.roomInfo}>
-                      <Text style={styles.roomTitle} numberOfLines={2}>{room.title}</Text>
-
-                      <View style={styles.roomDetails}>
-                        <Text style={styles.roomPrice}>
-                          {new Intl.NumberFormat('vi-VN', {
-                            style: 'currency',
-                            currency: 'VND'
-                          }).format(room.price)}/tháng
-                        </Text>
-
-                        <Text style={styles.roomLocation} numberOfLines={1}>📍 {room.location}</Text>
-                        <Text style={styles.roomArea}>📐 {room.area} m²</Text>
-                      </View>
+                      <Text style={styles.roomTitle} numberOfLines={2}>{room.title || 'Không có tiêu đề'}</Text>
+                      <Text style={styles.roomPrice}>
+                        {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND'
+                        }).format(room.price || 0)}/tháng
+                      </Text>
+                      <Text style={styles.roomLocation} numberOfLines={1}>📍 {room.location || 'Không có địa điểm'}</Text>
+                      <Text style={styles.roomArea}>📐 {room.area || 0} m²</Text>
+                      <TouchableOpacity
+                        style={styles.viewDetailButton}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          router.push(`/rooms/${room._id}`);
+                        }}
+                      >
+                        <Text style={styles.viewDetailButtonText}>Xem chi tiết</Text>
+                      </TouchableOpacity>
                     </View>
-
-                    <TouchableOpacity
-                      style={styles.viewDetailButton}
-                      onPress={(e) => {
-                        e.stopPropagation(); // Prevent triggering the parent press
-                        router.push(`/rooms/${room._id}`);
-                      }}
-                    >
-                      <Text style={styles.viewDetailButtonText}>Xem chi tiết</Text>
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                )}
-              />
-            </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
 
             <Text style={styles.timestamp}>
               {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -163,20 +210,22 @@ const ChatBot: React.FC<ChatBotProps> = ({ visible, onClose }) => {
         {/* Input Area */}
         <View style={styles.inputContainer}>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, isLoading && styles.textInputDisabled]}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Hỏi tôi về phòng trọ..."
+            placeholder={isLoading ? 'Đang xử lý...' : 'Hỏi tôi về phòng trọ...'}
             multiline
             maxLength={500}
+            editable={!isLoading}
+            selectTextOnFocus={!isLoading}
           />
           <TouchableOpacity
-            style={[styles.sendButton, inputText.trim() === '' && styles.sendButtonDisabled]}
+            style={[styles.sendButton, (inputText.trim() === '' || isLoading) && styles.sendButtonDisabled]}
             onPress={handleSend}
             disabled={isLoading || inputText.trim() === ''}
           >
             {isLoading ? (
-              <Ionicons name="time" size={24} color="#fff" />
+              <Ionicons name="hourglass-outline" size={24} color="#fff" />
             ) : (
               <Ionicons name="send" size={24} color="#fff" />
             )}
@@ -253,6 +302,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     borderBottomLeftRadius: 5,
   },
+  botBubbleWithRooms: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 18,
+    borderBottomLeftRadius: 5,
+    padding: 10,
+    maxWidth: '90%',
+  },
   messageText: {
     fontSize: 16,
     lineHeight: 22,
@@ -262,6 +318,8 @@ const styles = StyleSheet.create({
   },
   botText: {
     color: '#000',
+    fontSize: 14,
+    marginBottom: 8,
   },
   timestamp: {
     fontSize: 12,
@@ -289,6 +347,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#f8f8f8',
   },
+  textInputDisabled: {
+    backgroundColor: '#e0e0e0',
+    opacity: 0.7,
+  },
   sendButton: {
     backgroundColor: '#007AFF',
     width: 44,
@@ -300,25 +362,26 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: '#ccc',
   },
-  roomRecommendationsContainer: {
-    marginTop: 10,
-    width: '100%',
-  },
   roomRecommendationItem: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
+    borderRadius: 8,
+    marginBottom: 6,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    flexDirection: 'column',
+    overflow: 'hidden',
+  },
+  roomContent: {
+    flexDirection: 'row',
+    padding: 8,
+    alignItems: 'center',
   },
   roomImageContainer: {
-    width: '100%',
-    height: 120,
-    borderRadius: 8,
+    width: 100,
+    height: 80,
+    borderRadius: 6,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginRight: 10,
+    flexShrink: 0,
   },
   roomImage: {
     width: '100%',
@@ -333,46 +396,47 @@ const styles = StyleSheet.create({
   },
   noImageText: {
     color: '#999',
-    fontSize: 14,
+    fontSize: 11,
   },
   roomInfo: {
     flex: 1,
-    marginBottom: 10,
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    paddingLeft: 4,
   },
   roomTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '600',
     color: '#000',
-    marginBottom: 6,
-    minHeight: 40,
-  },
-  roomDetails: {
-    gap: 4,
+    marginBottom: 4,
   },
   roomPrice: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#007AFF',
     fontWeight: '600',
+    marginBottom: 3,
   },
   roomLocation: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
+    marginBottom: 2,
   },
   roomArea: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#888',
+    marginBottom: 6,
   },
   viewDetailButton: {
     backgroundColor: '#007AFF',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     borderRadius: 6,
     alignSelf: 'flex-start',
-    marginTop: 8,
+    marginTop: 4,
   },
   viewDetailButtonText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
 });

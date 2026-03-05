@@ -19,58 +19,43 @@ function PostModal({ visible, onClose }) {
             const response = await requestCreatePost(formData);
 
             console.log('Post creation response:', response); // Debug log
-            console.log('Response data type:', typeof response);
-            console.log('Response keys:', Object.keys(response || {}));
 
-            // Check for error first - if response has error field, treat as error regardless of other indicators
-            const hasError = response && (response.error || (response.data && response.data.error));
-
-            // Check for success - API might return different success indicators
-            // Common success response patterns: { success: true }, { status: 'success' }, { data: { success: true } }
-            const isSuccess = response && !hasError && (
+            // Backend trả về { code: 200, message: '...', metadata: {...} } khi thành công
+            // Hoặc { message: '...', metadata: {...} } từ success.response
+            const isSuccess = response && (
+                response.code === 200 || 
+                response.code === 'OK' ||
                 response.success === true ||
-                response.status === 'success' ||
-                (response.data && response.data.success) ||
-                response.statusCode === 200 ||
-                response.code === 200
+                (response.metadata && !response.error)
             );
 
-            console.log('Has error?', hasError); // Debug log
             console.log('Is success?', isSuccess); // Debug log
 
             if (isSuccess) {
-                // Show success message - Ant Design's message.success already has a green checkmark
-                message.success('Tạo bài đăng thành công!');
+                // Show success message with green checkmark
+                message.success('Tạo bài đăng thành công!', 2);
 
                 try {
-                    // Refresh user data to update post count
+                    // Refresh user data to update post count and balance
                     await fetchAuth();
                 } catch (refreshError) {
                     console.error('Error refreshing user data:', refreshError);
                     // Don't fail the entire operation if refresh fails
                 }
 
-                // Close the modal - ensure this happens regardless of navigation
+                // Close the modal first, then navigate
                 onClose();
-
-                // Redirect to user's profile page
-                navigate('/trang-ca-nhan');
-            } else if (hasError) {
-                // Handle error response
-                const errorMessage = response?.error || response?.data?.error || response?.message || 'Có lỗi xảy ra khi tạo bài đăng';
-                console.log('Error message to display:', errorMessage); // Debug log
-                message.error(errorMessage);
-
-                // Don't close the modal on API error so user can fix and resubmit
-                // The modal will remain open for user to correct any issues
+                
+                // Use setTimeout to ensure modal closes before navigation
+                setTimeout(() => {
+                    navigate('/trang-ca-nhan');
+                }, 300);
             } else {
-                // Handle different response formats for error (when no explicit success indicators)
-                const errorMessage = response?.message || response?.error || response?.data?.message || 'Có lỗi xảy ra khi tạo bài đăng';
+                // Handle error response
+                const errorMessage = response?.message || response?.error || 'Có lỗi xảy ra khi tạo bài đăng';
                 console.log('Error message to display:', errorMessage); // Debug log
                 message.error(errorMessage);
-
                 // Don't close the modal on API error so user can fix and resubmit
-                // The modal will remain open for user to correct any issues
             }
         } catch (error) {
             console.error('Full error object:', error); // More detailed error logging
@@ -97,9 +82,7 @@ function PostModal({ visible, onClose }) {
             }
 
             message.error(errorMessage);
-
             // Don't close the modal on error so user can fix and resubmit
-            // The modal will remain open for user to correct any issues
         } finally {
             setIsSubmitting(false);
         }
@@ -113,7 +96,7 @@ function PostModal({ visible, onClose }) {
         <Modal
             title="Tạo bài đăng mới"
             open={visible}
-            onCancel={onClose}
+            onCancel={handleCancel}
             footer={null}
             width={1000}
             destroyOnClose={true}

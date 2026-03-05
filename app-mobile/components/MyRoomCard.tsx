@@ -73,13 +73,37 @@ const MyRoomCard: React.FC<MyRoomCardProps> = ({ post, onFavoriteToggle, onEdit,
   };
 
   const handleDeletePress = () => {
+    // Kiểm tra trạng thái bài đăng để hiển thị message phù hợp
+    const isApproved = post.status === 'active';
+    const isRejected = post.status === 'cancel';
+    const feeAmount = post.fee || 0;
+    
+    let message = '';
+    let confirmText = '';
+    let successMessage = '';
+    
+    if (isApproved) {
+      message = 'Bài viết đã được duyệt. Bạn sẽ KHÔNG được hoàn lại phí đăng khi xóa.';
+      confirmText = 'Xóa (không hoàn tiền)';
+      successMessage = 'Bài đăng đã được xóa';
+    } else if (isRejected) {
+      message = `Bài viết bị từ chối. Bạn sẽ được hoàn lại ${feeAmount.toLocaleString('vi-VN')}₫ vào số dư khi xóa bài viết này.`;
+      confirmText = 'Xóa và hoàn tiền';
+      successMessage = `Bài đăng đã được xóa. ${feeAmount.toLocaleString('vi-VN')}₫ đã được hoàn vào số dư.`;
+    } else {
+      // status = 'inactive' (chờ duyệt)
+      message = `Bạn sẽ được hoàn lại ${feeAmount.toLocaleString('vi-VN')}₫ vào số dư khi xóa bài viết này.`;
+      confirmText = 'Xóa và hoàn tiền';
+      successMessage = `Bài đăng đã được xóa. ${feeAmount.toLocaleString('vi-VN')}₫ đã được hoàn vào số dư.`;
+    }
+    
     Alert.alert(
       'Xác nhận xóa',
-      'Bạn có chắc chắn muốn xóa bài đăng này? Hành động này không thể hoàn tác.',
+      `Bạn có chắc chắn muốn xóa bài đăng này? Hành động này không thể hoàn tác.\n\n${message}`,
       [
         { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Xóa',
+          text: confirmText,
           style: 'destructive',
           onPress: async () => {
             try {
@@ -88,7 +112,7 @@ const MyRoomCard: React.FC<MyRoomCardProps> = ({ post, onFavoriteToggle, onEdit,
               Toast.show({
                 type: 'success',
                 text1: 'Thành công',
-                text2: 'Bài đăng đã được xóa',
+                text2: successMessage,
               });
             } catch (error) {
               console.error('Error deleting post:', error);

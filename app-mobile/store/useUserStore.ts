@@ -148,7 +148,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
         if (!secretKey) {
           console.warn('No secret key found for decryption, storing encrypted data as-is');
-          set({ user: null, isAuthenticated: true }); // Set as authenticated but without user details
+          // Keep user data if already exists, don't set to null
+          set((state) => ({ 
+            user: state.user, 
+            isAuthenticated: true 
+          }));
         } else {
           console.log('getUserData: Attempting to decrypt data with secret key');
           try {
@@ -167,19 +171,31 @@ export const useAuthStore = create<AuthState>((set) => ({
               // If decryption fails, we might still want to consider the user authenticated
               // since the token is valid but we just couldn't decrypt the user data
               console.warn('Could not decrypt user data, but token is valid');
-              set({ user: null, isAuthenticated: true }); // Set as authenticated but without user details
+              // Keep existing user data instead of setting to null
+              set((state) => ({ 
+                user: state.user, 
+                isAuthenticated: true 
+              }));
             }
           } catch (decryptionError) {
             console.error('Decryption failed:', decryptionError);
             // If decryption fails, we still consider the user authenticated since the API call succeeded
-            set({ user: null, isAuthenticated: true });
+            // Keep existing user data instead of setting to null
+            set((state) => ({ 
+              user: state.user, 
+              isAuthenticated: true 
+            }));
           }
         }
       } else {
         // Handle case where the API returns user data directly without encryption
         // This might happen if the backend format has changed
         console.warn('Response format might have changed, no encrypted data found');
-        set({ user: null, isAuthenticated: true }); // Set as authenticated but without user details
+        // Keep existing user data instead of setting to null
+        set((state) => ({ 
+          user: state.user, 
+          isAuthenticated: true 
+        }));
       }
 
       // Initialize socket connection with the access token
@@ -199,7 +215,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       } else {
         // For other errors, we still want to consider the user authenticated if the token is valid
         // since the API call to /api/auth might have succeeded but data parsing failed
-        set({ user: null, isAuthenticated: true }); // Mark as authenticated even if user data is not available
+        // Keep existing user data instead of setting to null
+        set((state) => ({ 
+          user: state.user, 
+          isAuthenticated: true 
+        }));
       }
 
       // Initialize socket connection even if there's an error getting user data

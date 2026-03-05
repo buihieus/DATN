@@ -479,9 +479,9 @@ function Header() {
         {
             key: '2',
             loaiTin: 'Tin thường',
-            threeDays: '10.000 VNĐ',
-            sevenDays: '50.000 VNĐ',
-            thirtyDays: '1.000.000 VNĐ',
+            threeDays: '30.000 VNĐ',
+            sevenDays: '70.000 VNĐ',
+            thirtyDays: '300.000 VNĐ',
         },
     ];
 

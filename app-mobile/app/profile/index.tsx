@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Link, router } from 'expo-router';
 import { useAuthStore } from '../../store/useUserStore';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeArea } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -66,7 +66,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeArea style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.contentContainer}>
         {/* Simple Header - Only Avatar and Name */}
         <View style={styles.simpleHeader}>
@@ -155,44 +155,15 @@ export default function ProfileScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/recharge/history')}>
+            <View style={styles.settingContent}>
+              <Ionicons name="wallet-outline" size={20} color="#666" style={styles.settingIcon} />
+              <Text style={styles.settingText}>Lịch sử nạp tiền</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#ccc" />
+          </TouchableOpacity>
         </View>
-
-        {/* App Settings */}
-        {/* <View style={styles.settingsCard}>
-          <Text style={styles.cardTitle}>Cài đặt ứng dụng</Text>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingContent}>
-              <Ionicons name="notifications-outline" size={20} color="#666" style={styles.settingIcon} />
-              <Text style={styles.settingText}>Thông báo</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingContent}>
-              <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.settingIcon} />
-              <Text style={styles.settingText}>Bảo mật</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingContent}>
-              <Ionicons name="language-outline" size={20} color="#666" style={styles.settingIcon} />
-              <Text style={styles.settingText}>Ngôn ngữ</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingContent}>
-              <Ionicons name="help-circle-outline" size={20} color="#666" style={styles.settingIcon} />
-              <Text style={styles.settingText}>Trợ giúp</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
-          </TouchableOpacity>
-        </View> */}
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -200,7 +171,7 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeArea>
+    </SafeAreaView>
   );
 }
 

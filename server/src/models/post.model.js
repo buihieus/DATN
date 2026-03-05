@@ -89,6 +89,14 @@ const modelPost = new Schema(
             enum: ['vip', 'normal'],
             default: 'normal'  // Mặc định là 'normal'
         },
+        fee: {
+            type: Number,
+            required: false,  // Phí đăng bài (lưu để hoàn tiền khi xóa)
+        },
+        feeDuration: {
+            type: Number,
+            required: false,  // Số ngày của gói đăng (3, 7, 30)
+        },
         endDate: {
             type: Date,
             required: true,

@@ -5,7 +5,10 @@ import { getStoredTokens } from '../utils/tokenUtils';
 // For Android emulator: use 10.0.2.2 to reach host machine
 // For iOS simulator: localhost might work
 // For real devices: use your computer's IP address on the local network
-const CHATBOT_API_URL = 'http://192.168.48.1:8000'; // Use the same IP as your main API
+// Use environment variable if available, otherwise derive from API_BASE_URL
+const CHATBOT_API_URL = process.env.EXPO_PUBLIC_CHATBOT_URL 
+  || API_BASE_URL.replace(':3000', ':8000') // Replace API port with chatbot port
+  || 'http://192.168.16.103:8000'; // Fallback to the same IP as your main API
 
 // Interface for room recommendations
 export interface RoomRecommendation {

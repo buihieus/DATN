@@ -523,7 +523,7 @@ export default function HomeScreen() {
             <TouchableOpacity onPress={() => router.navigate('/(tabs)/profile')}>
               <Ionicons name="person-circle-outline" size={40} color="#007AFF" />
             </TouchableOpacity>
-            <Text style={styles.greeting}>Xin chào {user?.fullName?.split(' ')[0] || 'User'}!</Text>
+            <Text style={styles.greeting}>Xin chào {user?.fullName?.split(' ')[0] || 'bạn'}!</Text>
           </View>
           {/* <Text style={styles.title}>Tìm bài đăng lý tưởng</Text> */}
         </View>

@@ -58,15 +58,15 @@ const OPTIONS_MAP = {
 };
 
 const pricePostVip = [
-    { date: 3, price: 50000 },
-    { date: 7, price: 315000 },
-    { date: 30, price: 1200000 },
+    { date: 3, price: 30000 },
+    { date: 7, price: 70000 },
+    { date: 30, price: 300000 },
 ];
 
 const pricePostNormal = [
-    { date: 3, price: 10000 },
-    { date: 7, price: 60000 },
-    { date: 30, price: 1000000 },
+    { date: 3, price: 30000 },
+    { date: 7, price: 70000 },
+    { date: 30, price: 300000 },
 ];
 
 class controllerPosts {
@@ -161,6 +161,8 @@ class controllerPosts {
             userId: id,
             endDate: endDate ? endDate : null,
             typeNews,
+            fee: pricePost.price,  // Lưu phí đăng bài để hoàn tiền khi xóa
+            feeDuration: dateEnd,  // Lưu số ngày của gói đăng (3, 7, 30)
         });
         await modelUser.findByIdAndUpdate(id, { $inc: { balance: -pricePost.price } });
 
@@ -582,13 +584,53 @@ class controllerPosts {
 
     async deletePost(req, res) {
         const { id } = req.body;
+        const { id: userId } = req.user;
+        const { deletedBy } = req.body; // 'user' hoặc 'admin'
+        
         const findPost = await modelPost.findById(id);
         if (!findPost) {
             throw new BadRequestError('Post not found');
         }
+        
+        // Nếu admin xóa thì không hoàn tiền
+        if (deletedBy === 'admin') {
+            await modelPost.findByIdAndDelete(id);
+            await modelFavourite.deleteMany({ postId: id });
+            
+            console.log(`Admin xóa bài ${id} - Không hoàn tiền`);
+            
+            // Schedule re-indexing using the debounced function
+            try {
+                debouncedReindex();
+                console.log('Scheduled re-indexing after deleting post');
+            } catch (error) {
+                console.error('Error scheduling re-indexing after deleting post:', error);
+            }
+
+            return new OK({
+                message: 'Xoá bài viết thành công',
+                metadata: findPost,
+            }).send(res);
+        }
+        
+        // Kiểm tra quyền sở hữu bài viết (user xóa)
+        if (findPost.userId !== userId) {
+            throw new BadRequestError('Bạn không có quyền xóa bài viết này');
+        }
+        
+        // Chỉ hoàn tiền nếu bài viết ở trạng thái 'inactive' (chờ duyệt) hoặc 'cancel' (bị từ chối)
+        // Bài đã duyệt (status = 'active') sẽ không được hoàn tiền
+        if ((findPost.status === 'inactive' || findPost.status === 'cancel') && findPost.fee) {
+            // Hoàn lại phí đăng bài vào số dư người dùng
+            await modelUser.findByIdAndUpdate(findPost.userId, { 
+                $inc: { balance: findPost.fee } 
+            });
+            
+            console.log(`Hoàn tiền ${findPost.fee} VNĐ cho user ${findPost.userId} khi xóa bài ${id} (status: ${findPost.status})`);
+        }
+        
         await modelPost.findByIdAndDelete(id);
         await modelFavourite.deleteMany({ postId: id });
-        await modelUser.findByIdAndUpdate(findPost.userId, { $inc: { balance: findPost.price } });
 
         // Schedule re-indexing using the debounced function
         try {
